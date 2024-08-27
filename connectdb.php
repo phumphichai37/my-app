@@ -1,16 +1,18 @@
 <?php
+require 'vendor/autoload.php';
 
-$hostName = "localhost";
-$dbUser = "root";
-$dbPassword = "";
-$dbName = "takecare";
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 
-// Create connection
+$hostName = $_ENV['DB_HOST'];
+$dbUser = $_ENV['DB_USER'];
+$dbPassword = $_ENV['DB_PASSWORD'];
+$dbName = $_ENV['DB_NAME'];
+
 $conn = mysqli_connect($hostName, $dbUser, $dbPassword, $dbName);
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
 
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+}
 ?>

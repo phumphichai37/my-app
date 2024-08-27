@@ -51,13 +51,6 @@ if (isset($_SESSION["pharmacist"])) {
     <nav class="navbar navbar-expand-lg navbar-info">
         <div class="container-fluid">
             <h5 class="text-white">TAKECARE</h5>
-            <div class="collapse navbar-collapse justify-content-end">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <!-- <a href="login.php" class="nav-link text-white">Login</a> -->
-                    </li>
-                </ul>
-            </div>
         </div>
     </nav>
     
@@ -133,10 +126,6 @@ if (isset($_SESSION["pharmacist"])) {
             <div class="form-group">
                 <input type="password" class="form-control" name="password" placeholder="Password" required>
                 <small class="form-text text-muted">กรุณาใส่รหัสอย่างน้อย 8 ตัว</small>
-            </div>
-            <div class="form-group">
-                <input type="password" class="form-control" name="password_confirm" placeholder="Confirm Password" required>
-                <small class="form-text text-muted">ยืนยันรหัสผ่าน</small>
             </div>
             <div class="form-group">
                 <input type="submit" class="btn btn-primary" value="Register Account" name="submit">

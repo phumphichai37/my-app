@@ -10,7 +10,7 @@ if (isset($_SESSION["pharmacist"])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+    <title>login</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -51,13 +51,6 @@ if (isset($_SESSION["pharmacist"])) {
     <nav class="navbar navbar-expand-lg navbar-info">
         <div class="container-fluid">
             <h5 class="text-white">TAKECARE</h5>
-            <div class="collapse navbar-collapse justify-content-end">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <!-- <a href="login.php" class="nav-link text-white">Login</a> -->
-                    </li>
-                </ul>
-            </div>
         </div>
     </nav>
     
@@ -69,24 +62,31 @@ if (isset($_SESSION["pharmacist"])) {
         if (isset($_POST["login"])) {
             $email = $_POST["email"];
             $password = $_POST["password"];
-
+        
             require_once "connectdb.php";
-            $sql = " SELECT * FROM pharmacist WHERE email = '$email'" ;
-            $result = mysqli_query($conn, $sql) ;
-            $user = mysqli_fetch_array($result, MYSQLI_ASSOC) ;
+        
+            $stmt = $conn->prepare("SELECT * FROM pharmacist WHERE email = ?");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+        
             if ($user) {
                 if (password_verify($password, $user["password"])) {
-                    header("Location: index.php");
                     session_start();
                     $_SESSION["pharmacist"] = "yes";
                     header("Location: index.php");
-                    die();
-                }else{
+                    exit();
+                } else {
                     echo "<div class='alert alert-danger'>รหัสผ่านไม่ถูกต้อง</div>";
                 }
-            }else{
+            } else {
                 echo "<div class='alert alert-danger'>อีเมลไม่ถูกต้อง</div>";
             }
+        
+            
+            $stmt->close();
+            $conn->close();
         }
         ?>
         <form action="login.php" method="post">

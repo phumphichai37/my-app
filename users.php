@@ -6,6 +6,22 @@ if (!isset($_SESSION['pharmacist'])) {
     exit();
 }
 require_once 'connectdb.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
+    $delete_user_id = $_POST['delete_user_id'];
+
+    $sql_delete = "DELETE FROM users WHERE user_id = ?";
+    $stmt = $conn->prepare($sql_delete);
+    $stmt->bind_param("i", $delete_user_id);
+
+    if ($stmt->execute()) {
+        echo "<script>alert('User deleted successfully');</script>";
+    } else {
+        echo "<script>alert('Error deleting user');</script>";
+    }
+
+    $stmt->close();
+}
 ?>
 
 <!DOCTYPE html>
@@ -92,23 +108,25 @@ require_once 'connectdb.php';
         </div>
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2>ข้อมูลผู้ป่วย</h2>
+            <div>
+                <a href="adduser.php" class="btn btn-success">Add User</a>
+            </div>
         </div>
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th scope="col">รหัสสมาชิก</th>
+                    <th scope="col">ลำดับสมาชิก</th>
                     <th scope="col">ชื่อสมาชิก</th>
                     <th scope="col">วัน/เดือน/ปี</th>
                     <th scope="col">เบอร์โทรศัพท์</th>
-                    <th scope="col">Add</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">manage</th>
                     <th scope="col">Delete</th>
                 </tr>
             </thead>
             <tbody>
                 <?php
-                require_once 'connectdb.php';
-
-                $sql = "SELECT user_id, full_name, birthday, phone_number FROM users";
+                $sql = "SELECT user_id, full_name, birthday, phone_number, email FROM users";
                 $result = mysqli_query($conn, $sql);
 
                 if (mysqli_num_rows($result) > 0) {
@@ -118,12 +136,18 @@ require_once 'connectdb.php';
                             <td>{$row['full_name']}</td>
                             <td>{$row['birthday']}</td>
                             <td>{$row['phone_number']}</td>
-                            <td><a href='usermanage.php?user_id={$row['user_id']}' class='btn btn-success'>Add</a></td>
-                            <td><button class='btn btn-danger'>Delete</button></td>
+                            <td>{$row['email']}</td>
+                            <td><a href='usermanage.php?user_id={$row['user_id']}' class='btn btn-success'>manage</a></td>
+                            <td>
+                                <form method='POST' onsubmit='return confirm(\"Are you sure you want to delete this user?\");'>
+                                    <input type='hidden' name='delete_user_id' value='{$row['user_id']}'>
+                                    <button type='submit' class='btn btn-danger'>Delete</button>
+                                </form>
+                            </td>
                         </tr>";
                     }
                 } else {
-                    echo "<tr><td colspan='6'>No members found</td></tr>";
+                    echo "<tr><td colspan='8'>No members found</td></tr>";
                 }
 
                 mysqli_close($conn);
