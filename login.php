@@ -1,7 +1,8 @@
 <?php
 session_start();
-if (isset($_SESSION["user"])) {
-    header("Location: index.php");
+if (isset($_SESSION["pharmacist"])) {
+    header("Location: login.php");
+    exit();
 }
 ?>
 <!DOCTYPE html>
@@ -9,22 +10,15 @@ if (isset($_SESSION["user"])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Register</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="stylesheet" href="style.css">
-</head>
-<style>
-        body {
-            /* background: url('asset/bg.jpg') no-repeat center center fixed;
-            background-size: cover; */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: aquamarine;
-        }
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/js/all.min.js" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOMYD4OVIt5yEd3/xKBf7elGmcYFZoaMH7enPbmZ" crossorigin="anonymous"></script>
+    <style>
         .container {
-            max-width: 500px;
+            max-width: 400px;
             margin-top: 50px;
             padding: 20px;
             background: rgba(255, 255, 255, 0.9);
@@ -39,6 +33,7 @@ if (isset($_SESSION["user"])) {
         }
         .btn {
             width: 100%;
+            margin-top: 10px;
         }
         .logo {
             text-align: center;
@@ -47,14 +42,25 @@ if (isset($_SESSION["user"])) {
         .logo img {
             max-width: 150px;
         }
-        /* @media (max-width: 575.98px) {
-            .container {
-                max-width: 90%;
-                padding: 10px;
-            }
-        } */
+        .navbar-info {
+            background-color: #17a2b8;
+        }
     </style>
+</head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-info">
+        <div class="container-fluid">
+            <h5 class="text-white">TAKECARE</h5>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <!-- <a href="login.php" class="nav-link text-white">Login</a> -->
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
     <div class="container">
         <div class="logo">
             <img src="asset/band.png" alt="Logo">
@@ -65,14 +71,14 @@ if (isset($_SESSION["user"])) {
             $password = $_POST["password"];
 
             require_once "connectdb.php";
-            $sql = " SELECT * FROM user WHERE email = '$email'" ;
+            $sql = " SELECT * FROM pharmacist WHERE email = '$email'" ;
             $result = mysqli_query($conn, $sql) ;
             $user = mysqli_fetch_array($result, MYSQLI_ASSOC) ;
             if ($user) {
                 if (password_verify($password, $user["password"])) {
                     header("Location: index.php");
                     session_start();
-                    $_SESSION["user"] = "yes";
+                    $_SESSION["pharmacist"] = "yes";
                     header("Location: index.php");
                     die();
                 }else{
@@ -96,6 +102,5 @@ if (isset($_SESSION["user"])) {
             <div><a href="register.php">สมัครสมาชิก</a></div>
         </form>
     </div>
-    
 </body>
 </html>

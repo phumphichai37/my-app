@@ -1,7 +1,7 @@
 <?php
 session_start();
-if (isset($_SESSION["user"])) {
-    header("Location: index.php");
+if (isset($_SESSION["pharmacist"])) {
+    header("Location: login.php");
     exit();
 }
 ?>
@@ -12,30 +12,13 @@ if (isset($_SESSION["user"])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-    <script>
-        $(function() {
-            $("#datepicker").datepicker({
-                dateFormat: "yy-mm-dd"
-            });
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/js/all.min.js" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOMYD4OVIt5yEd3/xKBf7elGmcYFZoaMH7enPbmZ" crossorigin="anonymous"></script>
     <style>
-        body {
-            /* background: url('asset/bg.jpg') no-repeat center center fixed;
-            background-size: cover;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh; */
-            background: aquamarine;
-
-        }
         .container {
-            max-width: 500px;
+            max-width: 400px;
             margin-top: 50px;
             padding: 20px;
             background: rgba(255, 255, 255, 0.9);
@@ -50,6 +33,7 @@ if (isset($_SESSION["user"])) {
         }
         .btn {
             width: 100%;
+            margin-top: 10px;
         }
         .logo {
             text-align: center;
@@ -58,15 +42,25 @@ if (isset($_SESSION["user"])) {
         .logo img {
             max-width: 150px;
         }
-        /* @media (max-width: 575.98px) {
-            .container {
-                max-width: 90%;
-                padding: 10px;
-            }
-        } */
+        .navbar-info {
+            background-color: #17a2b8;
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-info">
+        <div class="container-fluid">
+            <h5 class="text-white">TAKECARE</h5>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <!-- <a href="login.php" class="nav-link text-white">Login</a> -->
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
     <div class="container">
         <div class="logo">
             <img src="asset/band.png" alt="Logo">
@@ -74,18 +68,15 @@ if (isset($_SESSION["user"])) {
         <?php
         $fullname = '';
         $email = '';
-        $phone = '';
-        $birthdate = '';
+        $password = '';
         if (isset($_POST["submit"])) {
             $fullname = $_POST['fullname'];
-            $email = $_POST['email'];
-            $phone = $_POST['phone'];
-            $birthdate = $_POST['birthdate'];
+            $email = $_POST['email']; 
             $password = $_POST['password'];
 
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             $errors = array();
-            if (empty($fullname) || empty($email) || empty($phone) || empty($birthdate) || empty($password)) {
+            if (empty($fullname) || empty($email) || empty($password)) {
                 array_push($errors, 'กรุณากรอกข้อมูล');
             }
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -96,7 +87,7 @@ if (isset($_SESSION["user"])) {
             }
 
             require_once "connectdb.php";
-            $sql = "SELECT * FROM user WHERE email = ?";
+            $sql = "SELECT * FROM pharmacist WHERE email = ?";
             $stmt = mysqli_prepare($conn, $sql);
             mysqli_stmt_bind_param($stmt, "s", $email);
             mysqli_stmt_execute($stmt);
@@ -111,15 +102,18 @@ if (isset($_SESSION["user"])) {
                     echo "<div class='alert alert-danger'>$error</div>";
                 }
             } else {
-                $sql = "INSERT INTO user (userName, email, phone, birthdate, password) VALUES (?,?,?,?,?)";
+                $sql = "INSERT INTO pharmacist (pharmacist_name, email, password) VALUES (?,?,?)";
                 $stmt = mysqli_stmt_init($conn);
                 $prepareStmt = mysqli_stmt_prepare($stmt, $sql);
                 if ($prepareStmt) {
-                    mysqli_stmt_bind_param($stmt, "sssss", $fullname, $email, $phone, $birthdate, $hashed_password);
-                    mysqli_stmt_execute($stmt);
-                    echo "<div class='alert alert-success'>คุณได้ทำการสมัครสมาชิกเรียบร้อย</div>";
+                    mysqli_stmt_bind_param($stmt, "sss", $fullname, $email, $hashed_password);
+                    if (mysqli_stmt_execute($stmt)) {
+                        echo "<div class='alert alert-success'>คุณได้ทำการสมัครสมาชิกเรียบร้อย</div>";
+                    } else {
+                        echo "<div class='alert alert-danger'>เกิดข้อผิดพลาดในการสมัครสมาชิก</div>";
+                    }
                 } else {
-                    echo "<div class='alert alert-danger'>เกิดข้อผิดพลาดในการสมัครสมาชิก</div>";
+                    echo "<div class='alert alert-danger'>เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL</div>";
                 }
             }
         }
@@ -127,27 +121,25 @@ if (isset($_SESSION["user"])) {
 
         <form action="register.php" method="post">
             <div class="form-group">
-                <input type="text" class="form-control" name="fullname" placeholder="Full Name" value="<?php echo htmlspecialchars($fullname); ?>" required>
+                <input type="text" class="form-control" name="fullname" placeholder="First Name" value="<?php echo htmlspecialchars($fullname); ?>" required>
             </div>
             <div class="form-group">
-                <input type="email" class="form-control" name="email" placeholder="Email" value="<?php echo htmlspecialchars($email); ?>" required>
+                <input type="text" class="form-control" name="lastname" placeholder="Last Name" required>
             </div>
             <div class="form-group">
-                <input type="tel" class="form-control" name="phone" placeholder="Phone Number" pattern="[0-9]{10}" value="<?php echo htmlspecialchars($phone); ?>" required>
-                <small class="form-text text-muted">Example: 0661234567</small>
-            </div>
-            <div class="form-group">
-                <label for="date">Select a birthdate:</label>
-                <input type="date" id="date" name="birthdate" placeholder="Birth Date" class="form-control" value="<?php echo htmlspecialchars($birthdate); ?>" required>
+                <input type="email" class="form-control" name="email" placeholder="Email Address" value="<?php echo htmlspecialchars($email); ?>" required>
+                <small class="form-text text-muted">ตัวอย่าง: abc@gmail.com</small>
             </div>
             <div class="form-group">
                 <input type="password" class="form-control" name="password" placeholder="Password" required>
+                <small class="form-text text-muted">กรุณาใส่รหัสอย่างน้อย 8 ตัว</small>
             </div>
-            <!-- <div class="form-group">
-                <input type="password" class="form-control" name="confirm_password" placeholder="Confirm Password" required>
-            </div> -->
             <div class="form-group">
-                <input type="submit" class="btn btn-secondary" value="Register" name="submit">
+                <input type="password" class="form-control" name="password_confirm" placeholder="Confirm Password" required>
+                <small class="form-text text-muted">ยืนยันรหัสผ่าน</small>
+            </div>
+            <div class="form-group">
+                <input type="submit" class="btn btn-primary" value="Register Account" name="submit">
             </div>
             <div><a href="login.php">เข้าสู่ระบบ</a></div>
         </form>
