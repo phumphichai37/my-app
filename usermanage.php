@@ -10,27 +10,26 @@ if (!isset($_SESSION['pharmacist'])) {
 // รวมการเชื่อมต่อฐานข้อมูล
 include 'connectdb.php';
 
-// ตรวจสอบว่า user_id ถูกส่งมาหรือไม่
 if (!isset($_GET['user_id'])) {
     die("User ID not provided.");
 }
 
 $user_id = intval($_GET['user_id']);
 
-// เตรียมคำสั่ง SQL สำหรับดึงข้อมูลโปรไฟล์ผู้ใช้
-$sql = "SELECT * FROM users WHERE user_id = ?";
+$sql = "
+    SELECT users.full_name, users.email, users.birthday, users.phone_number, users.image, users.description,
+            address.house_no, address.village_no, address.sub_area, address.area, address.province, address.postal_code
+      FROM users
+      JOIN address ON users.user_id = address.user_id
+      WHERE users.user_id = ?
+";
+
 $stmt = $conn->prepare($sql);
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// ตรวจสอบว่ามีข้อมูลผู้ใช้หรือไม่
-if ($result->num_rows > 0) {
-    $user = $result->fetch_assoc();
-} else {
-    echo "User not found.";
-    exit();
-}
+$user = $result->fetch_assoc();
 
 $stmt->close();
 $conn->close();
@@ -79,19 +78,7 @@ $conn->close();
             max-height: 150px;
             width: auto;
             height: auto;
-            border-radius: 50%;
-            /* ทำให้เป็นวงกลม */
-        }
-
-        .profile-picture {
-            max-width: 150px;
-            max-height: 150px;
-            width: auto;
-            height: auto;
-            border-radius: 50%;
-            /* ทำให้เป็นวงกลม */
             background-color: #ddd;
-            /* สีพื้นหลังเมื่อไม่มีรูปภาพ */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -103,16 +90,6 @@ $conn->close();
 </head>
 
 <body>
-    <!-- <div class="sidebar">
-        <div class="logo">
-            <img src="asset/band.png" alt="Logo">
-        </div>
-        <a href="index.php" class="btn btn-secondary me-2">Index</a>
-        <a href="info.php" class="btn btn-secondary me-2">Info</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">Medicine</a>
-        <a href="admin.php" class="btn btn-secondary me-2">Admin</a>
-        <a href="buy.php" class="btn btn-secondary me-2">Buy</a>
-    </div> -->
     <div class="container" style="margin-left: 220px;">
         <div class="d-flex justify-content-between align-items-center my-4">
             <h1>MED TIME</h1>
@@ -121,6 +98,7 @@ $conn->close();
                 <a href="logout.php" class="btn btn-warning">Logout</a>
             </div>
         </div>
+
         <div class="container">
             <div class="profile-container">
                 <div class="profile-details">
@@ -134,23 +112,22 @@ $conn->close();
                     <?php endif; ?>
                 </div>
                 <div class="profile-details">
-                    <strong>Username:</strong> <?php echo htmlspecialchars($user['full_name']); ?>
-                </div>
-                <div class="profile-details">
-                    <strong>Email:</strong> <?php echo htmlspecialchars($user['email']); ?>
-                </div>
-                <div class="profile-details">
-                    <strong>Birthday:</strong> <?php echo htmlspecialchars($user['birthday']); ?>
-                </div>
-                <div class="profile-details">
-                    <strong>Phone:</strong> <?php echo htmlspecialchars($user['phone_number']); ?>
-                </div>
-                <div class="profile-details">
-                    <strong>Description:</strong> <?php echo htmlspecialchars($user['description']); ?>
+                    <strong>Username:</strong> <?php echo htmlspecialchars($user['full_name'] ?? ''); ?> <br />
+                    <strong>Email:</strong> <?php echo htmlspecialchars($user['email'] ?? ''); ?> <br />
+                    <strong>Birthday:</strong> <?php echo htmlspecialchars($user['birthday'] ?? ''); ?> <br />
+                    <strong>Phone:</strong> <?php echo htmlspecialchars($user['phone_number'] ?? ''); ?> <br />
+                    <strong>Description:</strong> <?php echo htmlspecialchars($user['description'] ?? ''); ?> <br />
+                    <strong>house_no:</strong> <?php echo htmlspecialchars($user['house_no'] ?? ''); ?> <br />
+                    <strong>village_no:</strong> <?php echo htmlspecialchars($user['village_no'] ?? ''); ?> <br />
+                    <strong>sub_area:</strong> <?php echo htmlspecialchars($user['sub_area'] ?? ''); ?> <br />
+                    <strong>area:</strong> <?php echo htmlspecialchars($user['area'] ?? ''); ?> <br />
+                    <strong>province:</strong> <?php echo htmlspecialchars($user['province'] ?? ''); ?> <br />
+                    <strong>postal_code:</strong> <?php echo htmlspecialchars($user['postal_code'] ?? ''); ?> <br />
                 </div>
                 <a href="editprofile.php?user_id=<?php echo $user_id; ?>" class="btn btn-primary">Edit Profile</a>
             </div>
         </div>
+    </div>
 </body>
 
 </html>

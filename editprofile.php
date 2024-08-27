@@ -19,10 +19,9 @@ $user_id = intval($_GET['user_id']);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // รับข้อมูลจากฟอร์ม
-    $username = $_POST['full_name'];
+    $username = $_POST['username'];
     $email = $_POST['email'];
-    $password = $_POST['password'];
-    $phone = $_POST['phone_number'];
+    $phone = $_POST['phone'];
     $description = $_POST['description'];
 
     // ตรวจสอบการอัปโหลดไฟล์
@@ -48,12 +47,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // เตรียมคำสั่ง SQL สำหรับอัปเดตข้อมูลโปรไฟล์
-    $sql = "UPDATE users SET full_name=?, email=?, password=?, phone_number=?, description=?, image=? WHERE user_id=?";
+    $sql = "UPDATE users SET full_name=?, email=?, phone_number=?, description=?, image=? WHERE user_id=?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('ssssssi', $username, $email, $password, $phone, $description, $image_path, $user_id);
+    $stmt->bind_param('sssssi', $username, $email, $phone, $description, $image_path, $user_id);
 
     if ($stmt->execute()) {
-        header("Location: profile.php?user_id=$user_id");
+        header("Location: usermanage.php?user_id=$user_id");
         exit();
     } else {
         echo "Failed to update profile: " . $conn->error;
@@ -102,15 +101,6 @@ $conn->close();
             margin-top: 20px;
         }
 
-        .logo {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .logo img {
-            max-width: 150px;
-        }
-
         .profile-picture {
             max-width: 150px;
             max-height: 150px;
@@ -121,38 +111,42 @@ $conn->close();
 </head>
 
 <body>
-    <div class="container">
-        <h1 class="text-center">Edit Profile</h1>
-        <form method="post" action="editprofile.php?user_id=<?php echo $user_id; ?>" enctype="multipart/form-data">
-            <div class="mb-3">
-                <?php if (!empty($user['image'])): ?>
-                    <img src="<?php echo htmlspecialchars($user['image']); ?>" alt="Profile Picture" class="profile-picture" />
-                <?php endif; ?>
-                <input type="file" class="form-control" id="profile_picture" name="profile_picture">
+    <div class="container" style="margin-left: 220px;">
+        <div class="d-flex justify-content-between align-items-center my-4">
+            <h1>MED TIME</h1>
+            <div>
+                <a href="usermanage.php" class="btn btn-secondary me-2">Back</a>
+                <a href="logout.php" class="btn btn-warning">Logout</a>
             </div>
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($user['full_name']); ?>" required>
-            </div>
-            <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
-            </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input type="text" class="form-control" id="password" name="password" value="<?php echo htmlspecialchars($user['password']); ?>" required>
-            </div>
-            <div class="mb-3">
-                <label for="phone" class="form-label">Phone</label>
-                <input type="text" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone_number']); ?>" required>
-            </div>
-            <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <input type="text" class="form-control" id="description" name="description" value="<?php echo htmlspecialchars($user['description']); ?>" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Save</button>
-        </form>
-    </div>
+        </div>
+        <div class="container">
+            <h1 class="text-center">Edit Profile</h1>
+            <form method="post" action="editprofile.php?user_id=<?php echo $user_id; ?>" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <?php if (!empty($user['image'])): ?>
+                        <img src="<?php echo htmlspecialchars($user['image']); ?>" alt="Profile Picture" class="profile-picture" />
+                    <?php endif; ?>
+                    <input type="file" class="form-control" id="profile_picture" name="profile_picture">
+                </div>
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($user['full_name']); ?>" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                </div>
+                <div class="mb-3">
+                    <label for="phone" class="form-label">Phone</label>
+                    <input type="text" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone_number']); ?>" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <input type="text" class="form-control" id="description" name="description" value="<?php echo htmlspecialchars($user['description']); ?>" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+        </div>
 </body>
 
 </html>

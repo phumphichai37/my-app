@@ -67,8 +67,13 @@ if (isset($_SESSION["pharmacist"])) {
             $email = $_POST['email']; 
             $password = $_POST['password'];
 
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $options = [
+                'cost' => 10,
+            ];
+            $hashed_password = password_hash($password, PASSWORD_BCRYPT, $options);
+            
             $errors = array();
+
             if (empty($fullname) || empty($email) || empty($password)) {
                 array_push($errors, 'กรุณากรอกข้อมูล');
             }
