@@ -15,12 +15,13 @@ $message = "";
 // ตรวจสอบว่ามีการส่งข้อมูลจากฟอร์มหรือไม่
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // ตรวจสอบว่ามีการส่งข้อมูลในฟอร์ม
-    if (isset($_POST['itemName'], $_POST['itemDescription'], $_POST['itemType'], $_POST['itemPrice'], $_POST['itemStock'])) {
+    if (isset($_POST['itemName'], $_POST['itemDescription'], $_POST['itemType'], $_POST['itemPrice'], $_POST['itemStock'], $_POST['image'])) {
         $itemName = $_POST['itemName'];
         $itemDescription = $_POST['itemDescription'];
         $itemType = $_POST['itemType'];
         $itemPrice = $_POST['itemPrice'];
         $itemStock = $_POST['itemStock'];
+        $image = $_POST['image'];
 
         // จัดการการอัปโหลดรูปภาพ
         if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
@@ -225,7 +226,6 @@ $conn->close();
                         // ถ้าเป็น URL ก็แสดงผลโดยใช้ URL
                         echo '<img src="' . $image . '" alt="Image">';
                     } else {
-                        // ถ้าไม่ใช่ทั้ง Base64 และ URL อาจจะแสดงข้อความหรือรูปภาพ placeholder
                         echo '<img src="path/to/placeholder.jpg" alt="Invalid Image">';
                     }
                     echo '</div>';

@@ -1,6 +1,9 @@
 <?php
 session_start();
 include 'connectdb.php';
+$u_id = isset($_REQUEST['user_id']) ? trim($_REQUEST['user_id']) : "";
+
+// echo '$u_id';
 
 // ตรวจสอบว่าผู้ใช้ล็อกอินแล้วหรือยัง
 if (!isset($_SESSION['pharmacist'])) {
@@ -115,13 +118,14 @@ $conn->close();
         <div class="d-flex justify-content-between align-items-center my-4">
             <h1>MED TIME</h1>
             <div>
-                <a href="usermanage.php" class="btn btn-secondary me-2">Back</a>
+                <a href="usermanage.php?user_id=<?php echo $u_id; ?>" class="btn btn-secondary me-2">Back</a>
                 <a href="logout.php" class="btn btn-warning">Logout</a>
             </div>
         </div>
         <div class="container">
             <h1 class="text-center">Edit Profile</h1>
-            <form method="post" action="editprofile.php?user_id=<?php echo $user_id; ?>" enctype="multipart/form-data">
+            <form method="post" action="editprofile.php?user_id=<?php echo $u_id; ?>" enctype="multipart/form-data">
+                <input type="hidden" name="user_id" value="<?php echo $u_id; ?>">
                 <div class="mb-3">
                     <?php if (!empty($user['image'])): ?>
                         <img src="<?php echo htmlspecialchars($user['image']); ?>" alt="Profile Picture" class="profile-picture" />

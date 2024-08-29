@@ -9,6 +9,9 @@ if (!isset($_SESSION['pharmacist'])) {
 
 // รวมการเชื่อมต่อฐานข้อมูล
 include 'connectdb.php';
+$u_id = isset($_REQUEST['user_id']) ? trim($_REQUEST['user_id']) : "";
+
+// echo "$u_id";
 
 if (!isset($_GET['user_id'])) {
     die("User ID not provided.");

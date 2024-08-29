@@ -8,39 +8,68 @@ if (!isset($_SESSION['pharmacist'])) {
 
 include 'connectdb.php';
 
+// ฟังก์ชันที่แปลงมาใหม่
+function insertOrder($conn, $status_payment, $total_price, $payment_info) {
+    $orderQuery = "
+        INSERT INTO orders (status_payment, total_price, payment_info, order_time, create_at)
+        VALUES (?, ?, ?, NOW(), NOW())
+    ";
+    
+    try {
+        $stmt = $conn->prepare($orderQuery);
+        $stmt->bind_param("sds", $status_payment, $total_price, $payment_info); // ใช้ sds เพื่อรองรับค่าที่เป็นข้อความ
+        $stmt->execute();
+        
+        return $stmt->insert_id;
+    } catch (Exception $e) {
+        error_log("Error inserting order: " . $e->getMessage());
+        throw new Exception('Internal server error');
+    }
+}
+
+function insertOrderDetails($conn, $order_id, $items) {
+    $itemQuery = "
+        INSERT INTO order_details (order_id, medicine_id, quantity)
+        VALUES (?, ?, ?)
+    ";
+    
+    try {
+        $stmt = $conn->prepare($itemQuery);
+
+        foreach ($items as $item) {
+            $stmt->bind_param("iii", $order_id, $item['medicine_id'], $item['quantity']);
+            $stmt->execute();
+        }
+
+        return true;
+    } catch (Exception $e) {
+        error_log("Error inserting order details: " . $e->getMessage());
+        throw new Exception('Internal server error');
+    }
+}
+
 $message = "";
 
-// ตรวจสอบการชำระเงิน
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // ตรวจสอบว่ามีการชำระเงิน
     if (isset($_POST['checkout'])) {
-        // ตรวจสอบว่ามีตะกร้าสินค้า
         if (!empty($_SESSION['cart'])) {
-            // เริ่มต้นการทำธุรกรรม
-            $conn->begin_transaction();
-
             try {
-                // เพิ่มข้อมูลการสั่งซื้อ
-                $sql = "INSERT INTO orders (order_date) VALUES (NOW())";
-                $conn->query($sql);
-                $order_id = $conn->insert_id;
+                $conn->begin_transaction();
 
-                // เพิ่มรายการในตาราง orders_items
-                foreach ($_SESSION['cart'] as $item) {
-                    $sql = "INSERT INTO orders_items (order_id, medicine_id, medicine_name, price, quantity) VALUES (?, ?, ?, ?, ?)";
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("iisis", $order_id, $item['medicine_id'], $item['medicine_name'], $item['price'], $item['quantity']);
-                    $stmt->execute();
-                }
+                // ข้อมูลที่จำเป็นสำหรับการสร้างคำสั่งซื้อ
+                $user_id = $_SESSION['pharmacist'];  // แทนที่ด้วยค่าที่เหมาะสม
+                $status_payment = $_POST['status_payment']; // รับค่าจากฟอร์ม
+                $total_price = (float)$_POST['total_price']; // รับค่าจากฟอร์ม
+                $payment_info = $_POST['payment_info']; // รับค่าจากฟอร์ม
 
-                // เคลียร์ตะกร้าสินค้า
+                $order_id = insertOrder($conn, $status_payment, $total_price, $payment_info);
+                insertOrderDetails($conn, $order_id, $_SESSION['cart']);
+
                 unset($_SESSION['cart']);
 
-                // ทำธุรกรรมสำเร็จ
                 $conn->commit();
                 $message = "การชำระเงินเสร็จสิ้นแล้ว";
             } catch (Exception $e) {
-                // ทำธุรกรรมล้มเหลว
                 $conn->rollback();
                 $message = "เกิดข้อผิดพลาดในการชำระเงิน: " . $e->getMessage();
             }
@@ -52,6 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $conn->close();
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -109,12 +139,22 @@ $conn->close();
                     </tbody>
                 </table>
                 <form method="POST" action="">
+                    <div class="mb-3">
+                        <label for="status_payment" class="form-label">วิธีการชำระเงิน</label>
+                        <select id="status_payment" name="status_payment" class="form-select">
+                            <option value="โอนเงิน">โอนเงิน</option>
+                            <option value="เงินสด">เงินสด</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="total_price" value="<?php echo number_format($totalAmount, 2); ?>">
+                    <input type="hidden" name="payment_info" value="ชำระเงินเรียบร้อย">
                     <input type="submit" name="checkout" value="Checkout" class="btn btn-success">
                 </form>
             <?php else: ?>
                 <p>ไม่มีสินค้าที่อยู่ในตะกร้า</p>
             <?php endif; ?>
         </div>
+    </div>
 </body>
 
 </html>
