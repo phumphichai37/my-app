@@ -10,8 +10,12 @@ include 'connectdb.php';
 
 $message = "";
 
-// ตรวจสอบว่าผู้ใช้ได้คลิกซื้อสินค้าหรือไม่
+// Initialize the cart if it doesn't exist
+if (!isset($_SESSION['cart'])) {
+    $_SESSION['cart'] = [];
+}
 
+// ตรวจสอบว่าผู้ใช้ได้คลิกซื้อสินค้าหรือไม่
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // การจัดการเพิ่มสินค้า
     if (isset($_POST['medicine_id']) && isset($_POST['quantity'])) {
@@ -54,7 +58,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
     }
-
 
     // การจัดการอัปเดตจำนวนสินค้า
     if (isset($_POST['update_quantity']) && isset($_POST['medicine_id']) && isset($_POST['quantity'])) {
@@ -168,13 +171,11 @@ $conn->close();
         .btn-outline-custom {
             border: 2px solid #007bff;
             color: #007bff;
-           
         }
 
         .btn-outline-custom:hover {
             background-color: #007bff;
             color: white;
-            
         }
     </style>
 </head>

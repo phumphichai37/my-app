@@ -1,51 +1,36 @@
 <?php
 session_start();
 
-// ตรวจสอบว่าผู้ใช้เข้าสู่ระบบหรือยัง ถ้ายังไม่เข้าสู่ระบบให้ไปที่หน้า login.php
 if (!isset($_SESSION['pharmacist'])) {
     header("Location: login.php");
     exit();
 }
 
-include 'connectdb.php'; // เชื่อมต่อฐานข้อมูล
+include 'connectdb.php';
 
-// ฟังก์ชันดึงข้อมูลการสนทนา
-function selectChat($userId, $pharmacistId) {
-    global $conn;
-    $query = "
-        SELECT c.id as conversationId, m.id as messageId, m.sender_type, m.sender_id, m.text, m.image_url, m.created_at
-        FROM conversations c
-        LEFT JOIN messages m ON c.id = m.conversation_id
-        WHERE c.user_id = ? AND c.pharmacist_id = ?
-        ORDER BY m.created_at ASC
-    ";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param('ii', $userId, $pharmacistId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $messages = $result->fetch_all(MYSQLI_ASSOC);
-    return $messages;
+$query = "SELECT user_id, full_name FROM users";
+$result = $conn->query($query);
+
+$users = [];
+while ($row = $result->fetch_assoc()) {
+    $users[] = $row;
 }
 
-// สมมติว่าคุณได้ค่า $userId จาก request หรือ session
-$userId = 1; // สมมติค่า user_id (ควรได้มาจาก session หรือข้อมูลอื่นๆ)
-$pharmacistId = $_SESSION['pharmacist']; // ใช้ pharmacist_id จาก session
-$chats = selectChat($userId, $pharmacistId);
-
+$conn->close();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Select User</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="style2.css">
     <style>
         body {
-            background: #f8f9fa; /* Light grey background */
+            background: #f8f9fa;
         }
+
         .container {
             background: rgba(255, 255, 255, 0.9);
             padding: 20px;
@@ -53,19 +38,23 @@ $chats = selectChat($userId, $pharmacistId);
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
         }
+
         .logo {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .logo img {
             max-width: 150px;
         }
+
         @media (max-width: 575.98px) {
             .container {
                 max-width: 90%;
                 padding: 10px;
             }
         }
+
         .sidebar {
             background-color: #F8F8FF;
             height: 100vh;
@@ -76,10 +65,13 @@ $chats = selectChat($userId, $pharmacistId);
             padding-top: 60px;
             overflow-x: hidden;
         }
+
         .sidebar .btn {
             margin: 10px;
             width: calc(100% - 20px);
         }
+
+
         .chat-box {
             max-height: 400px;
             overflow-y: auto;
@@ -89,45 +81,149 @@ $chats = selectChat($userId, $pharmacistId);
             margin-top: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         .chat-message {
             margin-bottom: 15px;
             padding: 10px;
             border-radius: 8px;
         }
-        .chat-message p {
-            margin: 0;
-        }
+
         .chat-message.user {
-            background-color: #e9f7fe;
-            text-align: left;
+            background-color: #e9ecef;
         }
+
         .chat-message.pharmacist {
-            background-color: #f0f0f0;
-            text-align: right;
+            background-color: #d4edda;
         }
     </style>
 </head>
+
 <body>
     <div class="sidebar">
         <div class="logo">
-            <img src="asset/band.png" alt="Logo">
+            <img src="asset/band.png" alt="โลโก้">
         </div>
         <a href="index.php" class="btn btn-secondary me-2">Index</a>
-        <a href="users.php" class="btn btn-secondary me-2">User</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">Medicine</a>
-        <a href="admin.php" class="btn btn-secondary me-2">Admin</a>
         <a href="info.php" class="btn btn-secondary me-2">Info</a>
+        <a href="users.php" class="btn btn-secondary me-2">user</a>
+        <a href="admin.php" class="btn btn-secondary me-2">admin</a>
+        <a href="medicine.php" class="btn btn-secondary me-2">medicine</a>
         <a href="buy.php" class="btn btn-secondary me-2">Buy</a>
     </div>
     <div class="container" style="margin-left: 220px;">
         <div class="d-flex justify-content-between align-items-center my-4">
             <h1>MED TIME</h1>
             <div>
-                <a href="index.php" class="btn btn-secondary me-2">Back</a>
-                <a href="logout.php" class="btn btn-warning">Logout</a>
+                <a href="index.php" class="btn btn-secondary me-2">back</a>
+                <a href="logout.php" class="btn btn-warning">Log out</a>
             </div>
-        </div>  
-    </div>
-</body>
-</html>
+        </div>
+        <div class="container mt-5">
+            <h1>Select User to Chat</h1>
+            <ul class="list-group">
+                <?php foreach ($users as $user): ?>
+                    <li class="list-group-item">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#chatModal" data-user-id="<?php echo $user['user_id']; ?>" data-user-name="<?php echo htmlspecialchars($user['full_name']); ?>">
+                            Chat with <?php echo htmlspecialchars($user['full_name']); ?>
+                        </button>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
 
+        <!-- Chat Modal -->
+        <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="chatModalLabel">Chat</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="chat-box" id="chat-box"></div>
+                        <form id="chat-form">
+                            <div class="input-group mt-3">
+                                <input type="text" class="form-control" id="message-input" placeholder="Type your message">
+                                <button class="btn btn-primary" type="submit">Send</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+        <script>
+            const chatModal = document.getElementById('chatModal');
+            const chatBox = document.getElementById('chat-box');
+            let currentUserId = null;
+            let pharmacistId = "<?php echo $_SESSION['pharmacist_id']; ?>";
+
+            chatModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                currentUserId = button.getAttribute('data-user-id');
+
+                if (currentUserId) {
+                    loadMessages();
+                }
+            });
+
+            document.getElementById('chat-form').addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const text = document.getElementById('message-input').value;
+
+                if (currentUserId) {
+                    const response = await fetch('chat.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({
+                            'userId': currentUserId,
+                            'pharmacistId': pharmacistId,
+                            'text': text,
+                            'image': ''
+                        })
+                    });
+
+                    const message = await response.json();
+                    document.getElementById('message-input').value = '';
+                    const messageElement = document.createElement('div');
+                    messageElement.classList.add('chat-message', message.senderType);
+                    messageElement.textContent = message.text;
+                    chatBox.appendChild(messageElement);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                    // Ensure the modal stays open
+                    chatModal.addEventListener('hidden.bs.modal', function() {
+                        chatModal.removeEventListener('hidden.bs.modal', arguments.callee);
+                        chatModal.show();
+                    });
+                }
+            });
+
+            async function loadMessages() {
+                const response = await fetch(`chat.php?userId=${currentUserId}&pharmacistId=${pharmacistId}`);
+                const messages = await response.json();
+
+                chatBox.innerHTML = '';
+                messages.forEach(message => {
+                    const messageElement = document.createElement('div');
+                    messageElement.classList.add('chat-message', message.sender_type);
+                    messageElement.textContent = message.text;
+                    chatBox.appendChild(messageElement);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            setInterval(() => {
+                if (currentUserId) {
+                    loadMessages();
+                }
+            }, 5000);
+        </script>
+</body>
+
+</html>
