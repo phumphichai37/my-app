@@ -189,6 +189,7 @@ $conn->close();
         <a href="users.php" class="btn btn-secondary me-2">user</a>
         <a href="admin.php" class="btn btn-secondary me-2">admin</a>
         <a href="medicine.php" class="btn btn-secondary me-2">medicine</a>
+        <a href="chat.php" class="btn btn-secondary me-2">chat</a>
     </div>
     <div class="container" style="margin-left: 220px;">
         <div class="d-flex justify-content-between align-items-center my-4">

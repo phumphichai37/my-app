@@ -97,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
         <a href="medicine.php" class="btn btn-secondary me-2">Medicine</a>
         <a href="admin.php" class="btn btn-secondary me-2">Admin</a>
         <a href="buy.php" class="btn btn-secondary me-2">Buy</a>
+        <a href="chat.php" class="btn btn-secondary me-2">chat</a>
     </div>
     <div class="container" style="margin-left: 220px;">
         <div class="d-flex justify-content-between align-items-center my-4">

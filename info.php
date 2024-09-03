@@ -58,6 +58,8 @@
         <a href="medicine.php" class="btn btn-secondary me-2">Medicine</a>
         <a href="admin.php" class="btn btn-secondary me-2">Admin</a>
         <a href="users.php" class="btn btn-secondary me-2">User</a>
+        <a href="info.php" class="btn btn-secondary me-2">Info</a>
+        <a href="chat.php" class="btn btn-secondary me-2">chat</a>
     </div>
     <div class="container">
         <div class="d-flex justify-content-between align-items-center my-4">

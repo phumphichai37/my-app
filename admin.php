@@ -91,6 +91,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <a href="index.php" class="btn btn-secondary me-2">Index</a>
         <a href="users.php" class="btn btn-secondary me-2">User</a>
         <a href="medicine.php" class="btn btn-secondary me-2">Madicine</a>
+        <a href="info.php" class="btn btn-secondary me-2">Info</a>
+        <a href="admin.php" class="btn btn-secondary me-2">Buy</a>
+        <a href="chat.php" class="btn btn-secondary me-2">chat</a>
     </div>
     <div class="container" style="margin-left: 220px;">
         <div class="logo">
