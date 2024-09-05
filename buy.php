@@ -185,19 +185,20 @@ $conn->close();
         <div class="logo">
             <img src="asset/band.png" alt="โลโก้">
         </div>
-        <a href="index.php" class="btn btn-secondary me-2">Index</a>
-        <a href="info.php" class="btn btn-secondary me-2">Info</a>
-        <a href="users.php" class="btn btn-secondary me-2">user</a>
-        <a href="admin.php" class="btn btn-secondary me-2">admin</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">medicine</a>
-        <a href="chat.php" class="btn btn-secondary me-2">chat</a>
+        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
+        <a href="info.php" class="btn btn-secondary me-2">ข้อมูล</a>
+        <a href="users.php" class="btn btn-secondary me-2">ผู้ใช้งาน</a>
+        <a href="admin.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
+        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
+        <a href="chat.php" class="btn btn-secondary me-2">แชท</a>
+        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
     </div>
     <div class="container" style="margin-left: 220px;">
         <div class="d-flex justify-content-between align-items-center my-4">
             <h1>MED TIME</h1>
             <div>
-                <a href="index.php" class="btn btn-secondary me-2">back</a>
-                <a href="logout.php" class="btn btn-warning">Log out</a>
+                <a href="index.php" class="btn btn-secondary me-2">ย้อนกลับ</a>
+                <a href="logout.php" class="btn btn-warning">ออกจากระบบ</a>
             </div>
         </div>
 

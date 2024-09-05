@@ -7,10 +7,10 @@ if (!isset($_SESSION['pharmacist'])) {
     exit();
 }
 
-include 'connectdb.php'; 
+include 'connectdb.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    
+
     $new_name = $_POST['name'];
     $new_password = password_hash($_POST['password'], PASSWORD_DEFAULT); // เข้ารหัสรหัสผ่าน
 
@@ -40,6 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -48,8 +49,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="style2.css">
     <style>
         body {
-            background: #f8f9fa; /* Light grey background */
+            background: #f8f9fa;
+            /* Light grey background */
         }
+
         .container {
             background: rgba(255, 255, 255, 0.9);
             padding: 20px;
@@ -57,19 +60,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
         }
+
         .logo {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .logo img {
             max-width: 150px;
         }
+
         @media (max-width: 575.98px) {
             .container {
                 max-width: 90%;
                 padding: 10px;
             }
         }
+
         .sidebar {
             background-color: #F8F8FF;
             height: 100vh;
@@ -80,20 +87,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             padding-top: 60px;
             overflow-x: hidden;
         }
+
         .sidebar .btn {
             margin: 10px;
-            width: calc(100% - 20px); /* Adjust width to fit within the sidebar */
+            width: calc(100% - 20px);
+            /* Adjust width to fit within the sidebar */
         }
     </style>
 </head>
+
 <body>
     <div class="sidebar">
-        <a href="index.php" class="btn btn-secondary me-2">Index</a>
-        <a href="users.php" class="btn btn-secondary me-2">User</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">Madicine</a>
-        <a href="info.php" class="btn btn-secondary me-2">Info</a>
-        <a href="admin.php" class="btn btn-secondary me-2">Buy</a>
-        <a href="chat.php" class="btn btn-secondary me-2">chat</a>
+        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
+        <a href="info.php" class="btn btn-secondary me-2">ข้อมูล</a>
+        <a href="users.php" class="btn btn-secondary me-2">ผู้ใช้งาน</a>
+        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
+        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
+        <a href="chat.php" class="btn btn-secondary me-2">แชท</a>
+        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
     </div>
     <div class="container" style="margin-left: 220px;">
         <div class="logo">
@@ -102,8 +113,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="d-flex justify-content-between align-items-center my-4">
             <h1>MED TIME</h1>
             <div>
-                <a href="index.php" class="btn btn-secondary me-2">Back</a>
-                <a href="logout.php" class="btn btn-warning">Logout</a>
+                <a href="index.php" class="btn btn-secondary me-2">ย้อนกลับ</a>
+                <a href="logout.php" class="btn btn-warning">ออกจากระบบ</a>
             </div>
         </div>
 
@@ -122,4 +133,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </form>
     </div>
 </body>
+
 </html>

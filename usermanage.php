@@ -97,8 +97,8 @@ $conn->close();
         <div class="d-flex justify-content-between align-items-center my-4">
             <h1>MED TIME</h1>
             <div>
-                <a href="users.php" class="btn btn-secondary me-2">Back</a>
-                <a href="logout.php" class="btn btn-warning">Logout</a>
+                <a href="index.php" class="btn btn-secondary me-2">ย้อนกลับ</a>
+                <a href="logout.php" class="btn btn-warning">ออกจากระบบ</a>
             </div>
         </div>
 

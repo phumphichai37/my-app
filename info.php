@@ -54,19 +54,20 @@
         <div class="logo">
             <img src="asset/band.png" alt="Logo">
         </div>
-        <a href="index.php" class="btn btn-secondary me-2">Index</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">Medicine</a>
-        <a href="admin.php" class="btn btn-secondary me-2">Admin</a>
-        <a href="users.php" class="btn btn-secondary me-2">User</a>
-        <a href="info.php" class="btn btn-secondary me-2">Info</a>
-        <a href="chat.php" class="btn btn-secondary me-2">chat</a>
+        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
+        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
+        <a href="users.php" class="btn btn-secondary me-2">ผู้ใช้งาน</a>
+        <a href="admin.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
+        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
+        <a href="chat.php" class="btn btn-secondary me-2">แชท</a>
+        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
     </div>
     <div class="container">
         <div class="d-flex justify-content-between align-items-center my-4">
-            <h1>Manage</h1>
+            <h1>จัดการข้อมูล</h1>
             <div>
-                <a href="index.php" class="btn btn-secondary me-2">Back</a>
-                <a href="logout.php" class="btn btn-warning">Logout</a>
+                <a href="index.php" class="btn btn-secondary me-2">ย้อนกลับ</a>
+                <a href="logout.php" class="btn btn-warning">ออกจากระบบ</a>
             </div>
         </div>
 

@@ -92,25 +92,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
         <div class="logo">
             <img src="asset/band.png" alt="Logo">
         </div>
-        <a href="index.php" class="btn btn-secondary me-2">Index</a>
-        <a href="info.php" class="btn btn-secondary me-2">Info</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">Medicine</a>
-        <a href="admin.php" class="btn btn-secondary me-2">Admin</a>
-        <a href="buy.php" class="btn btn-secondary me-2">Buy</a>
-        <a href="chat.php" class="btn btn-secondary me-2">chat</a>
+        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
+        <a href="info.php" class="btn btn-secondary me-2">ข้อมูล</a>
+        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
+        <a href="admin.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
+        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
+        <a href="chat.php" class="btn btn-secondary me-2">แชท</a>
+        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
     </div>
     <div class="container" style="margin-left: 220px;">
         <div class="d-flex justify-content-between align-items-center my-4">
             <h1>MED TIME</h1>
             <div>
-                <a href="index.php" class="btn btn-secondary me-2">Back</a>
-                <a href="logout.php" class="btn btn-warning">Logout</a>
+                <a href="index.php" class="btn btn-secondary me-2">ย้อนกลับ</a>
+                <a href="logout.php" class="btn btn-warning">ออกจากระบบ</a>
             </div>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2>ข้อมูลผู้ป่วย</h2>
             <div>
-                <a href="adduser.php" class="btn btn-success">Add User</a>
+                <a href="adduser.php" class="btn btn-success">เพิ่มผู้ใช้งาน</a>
             </div>
         </div>
         <table class="table table-striped">
@@ -120,9 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
                     <th scope="col">ชื่อสมาชิก</th>
                     <th scope="col">วัน/เดือน/ปี</th>
                     <th scope="col">เบอร์โทรศัพท์</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">manage</th>
-                    <th scope="col">Delete</th>
+                    <th scope="col">อีเมล</th>
+                    <th scope="col">แก้ไข</th>
+                    <th scope="col">ลบ</th>
                 </tr>
             </thead>
             <tbody>
@@ -138,11 +139,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
                             <td>{$row['birthday']}</td>
                             <td>{$row['phone_number']}</td>
                             <td>{$row['email']}</td>
-                            <td><a href='usermanage.php?user_id={$row['user_id']}' class='btn btn-success'>manage</a></td>
+                            <td><a href='usermanage.php?user_id={$row['user_id']}' class='btn btn-success'>แก้ไข</a></td>
                             <td>
                                 <form method='POST' onsubmit='return confirm(\"Are you sure you want to delete this user?\");'>
                                     <input type='hidden' name='delete_user_id' value='{$row['user_id']}'>
-                                    <button type='submit' class='btn btn-danger'>Delete</button>
+                                    <button type='submit' class='btn btn-danger'>ลบ</button>
                                 </form>
                             </td>
                         </tr>";

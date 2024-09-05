@@ -43,7 +43,7 @@ if (!isset($_SESSION['pharmacist'])) {
         </div>
         <div class="row">
             <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card bg-info text-black h-100">
+                <div class="card bg-cornsilk text-black h-100">
                     <div class="card-body">
                         <h5>สถิติการเข้าใช้ระบบ</h5>
                         <a href="info.php" class="btn btn-lycan">More info</a>
@@ -51,7 +51,7 @@ if (!isset($_SESSION['pharmacist'])) {
                 </div>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card bg-warning text-black h-100">
+                <div class="card bg-cornsilk text-black h-100">
                     <div class="card-body">
                         <h5>ยา</h5>
                         <a href="medicine.php" class="btn btn-lycan">More info</a>
@@ -67,7 +67,7 @@ if (!isset($_SESSION['pharmacist'])) {
                 </div>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card bg-danger text-black h-100">
+                <div class="card bg-cornsilk text-black h-100">
                     <div class="card-body">
                         <h5 class="card-title">ผู้ดูแลระบบ</h5>
                         <a href="admin.php" class="btn btn-lycan">More info</a>
@@ -75,10 +75,18 @@ if (!isset($_SESSION['pharmacist'])) {
                 </div>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card bg-danger text-black h-100">
+                <div class="card bg-cornsilk text-black h-100">
                     <div class="card-body">
                         <h5 class="card-title">ร้านยา</h5>
                         <a href="buy.php" class="btn btn-lycan">More info</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card bg-cornsilk text-black h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">ติดตามการซื้อขาย</h5>
+                        <a href="status.php" class="btn btn-lycan">More info</a>
                     </div>
                 </div>
             </div>
