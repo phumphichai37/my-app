@@ -26,94 +26,161 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Members</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="style2.css">
     <style>
         body {
             background: #f8f9fa;
         }
+
+        .navbar-info {
+            background-color: #17a2b8;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 10px;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 220px;
+            height: calc(100% - 56px);
+            background-color: rgba(23, 162, 184, 0.9);
+            border-right: 1px solid #ddd;
+            z-index: 1000;
+            overflow-y: auto;
+            padding-top: 20px;
+        }
+
+        .sidebar .btn {
+            background-color: #17a2b8;
+            border: none;
+            color: #fff;
+            margin: 10px;
+            width: calc(100% - 20px);
+        }
+
+        .sidebar .btn:hover {
+            background-color: #138496;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            padding-left: 220px;
+            padding-top: 56px;
+        }
+
+        
         .container {
             background: rgba(255, 255, 255, 0.9);
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
         }
-        .logo {
-            text-align: center;
-            margin-bottom: 20px;
+
+        /* Responsive adjustments */
+        @media (max-width: 575.98px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                top: 0;
+            }
+
+            .container {
+                margin-left: 0;
+                margin-top: 20px;
+                padding: 10px;
+            }
         }
-        .logo img {
-            max-width: 150px;
-        }
-        .sidebar {
-            background-color: #F8F8FF;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 200px;
-            padding-top: 60px;
-            overflow-x: hidden;
-        }
-        .sidebar .btn {
-            margin: 10px;
-            width: calc(100% - 20px);
-        }
+
+        /* Table adjustments */
         table {
             width: 100%;
-            margin-bottom: 1rem;
-            color: #212529;
+            table-layout: auto;
+            border-collapse: collapse;
+            max-width: 100%;
         }
-        table th,
-        table td {
-            padding: 0.75rem;
-            vertical-align: top;
-            border-top: 1px solid #dee2e6;
+
+        th,
+        td {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            text-align: left;
         }
-        table thead th {
-            vertical-align: bottom;
-            border-bottom: 2px solid #dee2e6;
+
+        th {
+            background-color: #f2f2f2;
+            white-space: nowrap;
+            /* ป้องกันการตัดบรรทัดใน header */
         }
-        table tbody + tbody {
-            border-top: 2px solid #dee2e6;
+
+        td {
+            white-space: nowrap;
+            /* ป้องกันการตัดบรรทัดในเนื้อหาของเซลล์ */
         }
-        .table-striped tbody tr:nth-of-type(odd) {
-            background-color: rgba(0, 0, 0, 0.05);
+
+        /* Adjust the email column to wrap if needed */
+        td.email {
+            word-wrap: break-word;
+            max-width: 180px;
+        }
+
+        /* Button adjustments */
+        .add-user-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+            float: right;
+            margin-right: 5%;
+        }
+
+        .btn-group {
+            justify-content: flex-end;
+            margin-right: 20px;
         }
     </style>
 </head>
+
 <body>
-    <div class="sidebar">
-        <div class="logo">
-            <img src="asset/band.png" alt="Logo">
-        </div>
-        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
-        <a href="info.php" class="btn btn-secondary me-2">ข้อมูล</a>
-        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
-        <a href="admin.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
-        <a href="chat.php" class="btn btn-secondary me-2">แชท</a>
-        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
-    </div>
-    <div class="container" style="margin-left: 220px;">
-        <div class="d-flex justify-content-between align-items-center my-4">
-            <h1>MED TIME</h1>
+    <nav class="navbar navbar-expand-lg navbar-info">
+        <div class="container-fluid">
+            <h5 class="text-white">TAKECARE</h5>
             <div>
-                <a href="index.php" class="btn btn-secondary me-2">ย้อนกลับ</a>
-                <a href="logout.php" class="btn btn-warning">ออกจากระบบ</a>
+                <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
             </div>
         </div>
+    </nav>
+
+    <aside class="sidebar">
+        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
+        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
+        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
+        <a href="pharmacist.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
+        <a href="online.php" class="btn btn-secondary me-2">แชท</a>
+        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
+    </aside>
+
+    <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2>ข้อมูลผู้ป่วย</h2>
-            <div>
-                <a href="adduser.php" class="btn btn-success">เพิ่มผู้ใช้งาน</a>
-            </div>
         </div>
+        <!-- <div class="btn-group">
+            <a href="adduser.php" class="btn btn-success">เพิ่มผู้ใช้งาน</a>
+        </div> -->
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -138,9 +205,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
                             <td>{$row['full_name']}</td>
                             <td>{$row['birthday']}</td>
                             <td>{$row['phone_number']}</td>
-                            <td>{$row['email']}</td>
-                            <td><a href='usermanage.php?user_id={$row['user_id']}' class='btn btn-success'>แก้ไข</a></td>
-                            <td>
+                            <td class='email'>{$row['email']}</td>
+                            <td class='table-buttons'>
+                                <a href='usermanage.php?user_id={$row['user_id']}' class='btn btn-success'>แก้ไข</a>
+                            </td>
+                            <td class='table-buttons'>
                                 <form method='POST' onsubmit='return confirm(\"Are you sure you want to delete this user?\");'>
                                     <input type='hidden' name='delete_user_id' value='{$row['user_id']}'>
                                     <button type='submit' class='btn btn-danger'>ลบ</button>
@@ -149,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
                         </tr>";
                     }
                 } else {
-                    echo "<tr><td colspan='8'>No members found</td></tr>";
+                    echo "<tr><td colspan='7'>No members found</td></tr>";
                 }
 
                 mysqli_close($conn);
@@ -158,4 +227,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
         </table>
     </div>
 </body>
+
 </html>

@@ -15,41 +15,45 @@ $message = "";
 // ตรวจสอบว่ามีการส่งข้อมูลจากฟอร์มหรือไม่
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // ตรวจสอบว่ามีการส่งข้อมูลในฟอร์ม
-    if (isset($_POST['itemName'], $_POST['itemDescription'], $_POST['itemType'], $_POST['itemPrice'], $_POST['itemStock'], $_POST['image'])) {
+    if (isset($_POST['itemName'], $_POST['itemDescription'], $_POST['itemType'], $_POST['itemPrice'], $_POST['itemStock'])) {
         $itemName = $_POST['itemName'];
         $itemDescription = $_POST['itemDescription'];
         $itemType = $_POST['itemType'];
         $itemPrice = $_POST['itemPrice'];
         $itemStock = $_POST['itemStock'];
-        $image = $_POST['image'];
 
         // จัดการการอัปโหลดรูปภาพ
         if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
-            $imgData = file_get_contents($_FILES['file']['tmp_name']);
-            $imgName = basename($_FILES['file']['name']);
+            $fileType = mime_content_type($_FILES['file']['tmp_name']);
+            if (strpos($fileType, 'image/') === 0) {
+                // อ่านข้อมูลรูปภาพ
+                $imgData = file_get_contents($_FILES['file']['tmp_name']);
+                // เข้ารหัสรูปภาพเป็น Base64
+                $image = 'data:' . $fileType . ';base64,' . base64_encode($imgData);
 
-            // เตรียมคำสั่ง SQL สำหรับการเพิ่มข้อมูลยาและรูปภาพ
-            $sql = "INSERT INTO medicine (medicine_name, description, type, price, stock, image) VALUES (?, ?, ?, ?, ?, ?)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param('sssdis', $itemName, $itemDescription, $itemType, $itemPrice, $itemStock, $image);
+                // เพิ่มข้อมูลลงในฐานข้อมูล
+                $sql = "INSERT INTO medicine (medicine_name, description, type, price, stock, image) VALUES (?, ?, ?, ?, ?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param('sssdis', $itemName, $itemDescription, $itemType, $itemPrice, $itemStock, $image);
 
-            if ($stmt->execute()) {
-                $message = "Item '$itemName' added successfully!";
+                if ($stmt->execute()) {
+                    $message = "Item '$itemName' added successfully!";
+                } else {
+                    $message = "Failed to add item: " . $conn->error;
+                }
+
+                $stmt->close();
             } else {
-                $message = "Failed to add item: " . $conn->error;
+                $message = "Uploaded file is not an image.";
             }
-
-            $stmt->close();
         } else {
-            $message = "Error uploading image.";
+            $message = "Error uploading image: " . $_FILES['file']['error'];
         }
     }
 }
 
-
 if (isset($_GET['delete'])) {
     $id = intval($_GET['delete']);
-
 
     $sql = "DELETE FROM medicine WHERE medicine_id = ?";
     $stmt = $conn->prepare($sql);
@@ -57,17 +61,15 @@ if (isset($_GET['delete'])) {
 
     if ($stmt->execute()) {
         $message = "Item deleted successfully!";
+        echo "<script>window.location.href = 'medicine.php';</script>";
     } else {
         $message = "Failed to delete item: " . $conn->error;
     }
 
     $stmt->close();
 
-
-    header("Location: medicine.php");
     exit();
 }
-
 
 $sql = "SELECT * FROM medicine";
 $result = $conn->query($sql);
@@ -95,38 +97,49 @@ $conn->close();
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
+
         }
 
-        .logo {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .logo img {
-            max-width: 150px;
-        }
-
-        @media (max-width: 575.98px) {
-            .container {
-                max-width: 90%;
-                padding: 10px;
-            }
-        }
-
-        .sidebar {
-            background-color: #F8F8FF;
-            height: 100vh;
+        .navbar-info {
+            background-color: #17a2b8;
             position: fixed;
             top: 0;
             left: 0;
-            width: 200px;
-            padding-top: 60px;
-            overflow-x: hidden;
+            width: 100%;
+            z-index: 1000;
+            padding: 10px;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 220px;
+            height: calc(100% - 56px);
+            background-color: rgba(23, 162, 184, 0.9);
+            border-right: 1px solid #ddd;
+            z-index: 1000;
+            overflow-y: auto;
+            padding-top: 20px;
         }
 
         .sidebar .btn {
+            background-color: #17a2b8;
+            border: none;
+            color: #fff;
             margin: 10px;
             width: calc(100% - 20px);
+        }
+
+        .sidebar .btn:hover {
+            background-color: #138496;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            padding-left: 220px;
+            padding-top: 56px;
         }
 
         .medicine-item {
@@ -142,29 +155,25 @@ $conn->close();
 </head>
 
 <body>
-    <div class="sidebar">
-        <div class="logo">
-            <img src="asset/band.png" alt="Logo">
-        </div>
-        <a href="index.php" class="btn btn-secondary me-2">Index</a>
-        <a href="info.php" class="btn btn-secondary me-2">Info</a>
-        <a href="users.php" class="btn btn-secondary me-2">User</a>
-        <a href="admin.php" class="btn btn-secondary me-2">Admin</a>
-        <a href="buy.php" class="btn btn-secondary me-2">Buy</a>
-        <a href="chat.php" class="btn btn-secondary me-2">chat</a>
-    </div>
-    <div class="container" style="margin-left: 220px;">
-        <div class="logo">
-            <img src="asset/logo.png" alt="Logo">
-        </div>
-        <div class="d-flex justify-content-between align-items-center my-4">
-            <h1>MED TIME</h1>
+    <nav class="navbar navbar-expand-lg navbar-info">
+        <div class="container-fluid">
+            <h5 class="text-white">TAKECARE</h5>
             <div>
-                <a href="index.php" class="btn btn-secondary me-2">Back</a>
-                <a href="logout.php" class="btn btn-warning">Logout</a>
+                <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
             </div>
         </div>
+    </nav>
 
+    <aside class="sidebar">
+        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
+        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
+        <a href="users.php" class="btn btn-secondary me-2">ผู้ใช้งาน</a>
+        <a href="pharmacist.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
+        <a href="online.php" class="btn btn-secondary me-2">แชท</a>
+        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
+    </aside>
+
+    <div class="container">
         <div class="mb-4">
             <h2>เพิ่มรายการยา</h2>
             <?php if (!empty($message)): ?>
@@ -206,54 +215,60 @@ $conn->close();
                     echo '<div class="col-lg-4 col-md-6 medicine-item">';
                     echo '<div class="card text-black h-100">';
                     echo '<div class="card-body">';
-                    // เพิ่มคลาส d-flex และ justify-content-end
                     echo '<div class="d-flex justify-content-end">';
-                    echo '<a href="medicine.php?delete=' . $row["medicine_id"] . '" class="btn btn-danger mt-2">ลบ</a>';
+                    echo '<a href="javascript:void(0)" onclick="deleteItem(' . $row["medicine_id"] . ', event)" class="btn btn-danger mt-2">ลบ</a>';
                     echo '</div>';
                     echo '<h5 class="card-title">' . $row["medicine_name"] . '</h5>';
                     $shortDescription = mb_substr($row["description"], 0, 100);
-                    // แสดงข้อความที่ตัด และมีปุ่ม "อ่านเพิ่มเติม"
                     echo '<p class="card-text">' . $shortDescription . '<span id="dots-' . $row["medicine_id"] . '">...</span>';
-                    echo '<span id="more-' . $row["medicine_id"] . '" style="display:none;">' . mb_substr($row["description"], 100) . '</span></p>';
-                    echo '<button onclick="showMore(' . $row["medicine_id"] . ')" id="myBtn-' . $row["medicine_id"] . '" class="btn btn-link">อ่านเพิ่มเติม</button>';
+                    echo '<span id="more-' . $row["medicine_id"] . '" style="display:none;">' . mb_substr($row["description"], 100) . '</span>';
+                    echo '<a href="javascript:void(0)" onclick="showMore(' . $row["medicine_id"] . ', event)" id="readMoreBtn-' . $row["medicine_id"] . '"> อ่านเพิ่มเติม</a></p>';
 
-                    $image = $row["image"];
-
-                    // ตรวจสอบว่าค่าใน $image เป็น Base64 หรือไม่
-                    if (preg_match('/^data:image\/(\w+);base64,/', $image)) {
-                        // ถ้าเป็น Base64 ก็แสดงผลโดยใช้ Base64
-                        echo '<img src="' . $image . '" alt="Image">';
-                    } elseif (filter_var($image, FILTER_VALIDATE_URL)) {
-                        // ถ้าเป็น URL ก็แสดงผลโดยใช้ URL
-                        echo '<img src="' . $image . '" alt="Image">';
+                    // ตรวจสอบว่าเป็นรูปภาพ Base64 หรือ URL
+                    if (preg_match('/^data:image\/(\w+);base64,/', $row["image"])) {
+                        // แสดงผลรูปภาพ Base64
+                        echo '<img src="' . $row["image"] . '" alt="Image" style="max-width:100%; height:auto;">';
+                    } elseif (filter_var($row["image"], FILTER_VALIDATE_URL)) {
+                        // แสดงผลรูปภาพที่เป็น URL
+                        echo '<img src="' . $row["image"] . '" alt="Image" style="max-width:100%; height:auto;">';
                     } else {
-                        echo '<img src="path/to/placeholder.jpg" alt="Invalid Image">';
+                        // กรณีไม่มีรูปภาพ
+                        echo '<img src="placeholder.jpg" alt="No Image" style="max-width:100%; height:auto;">';
                     }
+
                     echo '</div>';
                     echo '</div>';
                     echo '</div>';
                 }
             } else {
-                echo '<div class="col-12"><p>No medicines found.</p></div>';
+                echo '<p>ไม่มีรายการยา</p>';
             }
             ?>
         </div>
-
     </div>
+
     <script>
-        function showMore(id) {
+        function showMore(id, event) {
+            event.preventDefault(); // ป้องกันการเลื่อนหน้าด้วย
             var dots = document.getElementById("dots-" + id);
             var moreText = document.getElementById("more-" + id);
-            var btnText = document.getElementById("myBtn-" + id);
+            var btnText = document.getElementById("readMoreBtn-" + id);
 
             if (dots.style.display === "none") {
                 dots.style.display = "inline";
-                btnText.innerHTML = "อ่านเพิ่มเติม";
+                btnText.innerHTML = " อ่านเพิ่มเติม";
                 moreText.style.display = "none";
             } else {
                 dots.style.display = "none";
-                btnText.innerHTML = "แสดงน้อยลง";
+                btnText.innerHTML = " ซ่อนข้อความ";
                 moreText.style.display = "inline";
+            }
+        }
+
+        function deleteItem(id, event) {
+            event.preventDefault(); // ป้องกันการเลื่อนหน้าด้วย
+            if (confirm('Are you sure you want to delete this item?')) {
+                window.location.href = 'medicine.php?delete=' + id;
             }
         }
     </script>

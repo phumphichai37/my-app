@@ -1,24 +1,24 @@
 <?php
-require_once 'connectdb.php'; // เชื่อมต่อฐานข้อมูล
+header('Content-Type: application/json');
+include 'connectdb.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// รับข้อมูล JSON ที่ส่งมาจาก JavaScript
-$data = json_decode(file_get_contents("php://input"), true);
-
-if (isset($data['order_id']) && isset($data['status_order'])) {
-    $order_id = $data['order_id'];
-    $status_order = $data['status_order'];
+// ตรวจสอบว่ามีการส่งข้อมูล order_id และ status
+if (isset($_POST['order_id']) && isset($_POST['status'])) {
+    $order_id = intval($_POST['order_id']);
+    $status = $_POST['status'];
 
     // อัปเดตสถานะในฐานข้อมูล
-    $stmt = $conn->prepare("UPDATE orders SET status_order = ? WHERE order_id = ?");
-    $stmt->bind_param("si", $status_order, $order_id);
-
+    $sql = "UPDATE orders SET status_payment = ? WHERE order_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("si", $status, $order_id);
+    
     if ($stmt->execute()) {
         echo json_encode(["success" => true]);
     } else {
-        echo json_encode(["success" => false, "message" => "Error updating status"]);
+        echo json_encode(["success" => false, "error" => "ไม่สามารถอัปเดตสถานะได้"]);
     }
 } else {
-    echo json_encode(["success" => false, "message" => "Invalid input"]);
+    echo json_encode(["success" => false, "error" => "ข้อมูลไม่ถูกต้อง"]);
 }
-
-?>

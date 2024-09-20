@@ -8,18 +8,18 @@ if (!isset($_SESSION['pharmacist'])) {
 
 include 'connectdb.php';
 
-// ฟังก์ชันที่แปลงมาใหม่
-function insertOrder($conn, $status_payment, $total_price, $payment_info) {
+function insertOrder($conn, $status_payment, $total_price, $payment_info)
+{
     $orderQuery = "
         INSERT INTO orders (status_payment, total_price, payment_info, order_time, create_at)
         VALUES (?, ?, ?, NOW(), NOW())
     ";
-    
+
     try {
         $stmt = $conn->prepare($orderQuery);
         $stmt->bind_param("sds", $status_payment, $total_price, $payment_info); // ใช้ sds เพื่อรองรับค่าที่เป็นข้อความ
         $stmt->execute();
-        
+
         return $stmt->insert_id;
     } catch (Exception $e) {
         error_log("Error inserting order: " . $e->getMessage());
@@ -27,12 +27,13 @@ function insertOrder($conn, $status_payment, $total_price, $payment_info) {
     }
 }
 
-function insertOrderDetails($conn, $order_id, $items) {
+function insertOrderDetails($conn, $order_id, $items)
+{
     $itemQuery = "
         INSERT INTO order_details (order_id, medicine_id, quantity)
         VALUES (?, ?, ?)
     ";
-    
+
     try {
         $stmt = $conn->prepare($itemQuery);
 
@@ -81,7 +82,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $conn->close();
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -140,21 +140,38 @@ $conn->close();
                 </table>
                 <form method="POST" action="">
                     <div class="mb-3">
-                        <label for="status_payment" class="form-label">วิธีการชำระเงิน</label>
-                        <select id="status_payment" name="status_payment" class="form-select">
-                            <option value="โอนเงิน">โอนเงิน</option>
-                            <option value="เงินสด">เงินสด</option>
-                        </select>
+                        <label class="form-label">วิธีการชำระเงิน</label>
+                        <div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_info" id="payment_transfer" value="โอนเงิน" <?php echo isset($_POST['payment_info']) && $_POST['payment_info'] === 'โอนเงิน' ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="payment_transfer">
+                                    โอนเงิน
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_info" id="payment_cash" value="เงินสด" <?php echo isset($_POST['payment_info']) && $_POST['payment_info'] === 'เงินสด' ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="payment_cash">
+                                    เงินสด
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <input type="hidden" name="total_price" value="<?php echo number_format($totalAmount, 2); ?>">
-                    <input type="hidden" name="payment_info" value="ชำระเงินเรียบร้อย">
+                    <input type="hidden" name="status_payment" value="รอการอนุมัติ">
                     <input type="submit" name="checkout" value="Checkout" class="btn btn-success">
                 </form>
             <?php else: ?>
                 <p>ไม่มีสินค้าที่อยู่ในตะกร้า</p>
             <?php endif; ?>
         </div>
+
+        <!-- รูปภาพที่จะซ่อนไว้ก่อน -->
+        <img id="paymentImage" src="asset/qrcode.jpg" alt="โอนเงินสำเร็จ" style="display:none; width: 300px; height: auto;">
+        
     </div>
+
+    <!-- JavaScript -->
+    <script src="cart_js.js"></script>
 </body>
 
 </html>

@@ -1,9 +1,6 @@
 <?php
 session_start();
 include 'connectdb.php';
-$u_id = isset($_REQUEST['user_id']) ? trim($_REQUEST['user_id']) : "";
-
-// echo '$u_id';
 
 // ตรวจสอบว่าผู้ใช้ล็อกอินแล้วหรือยัง
 if (!isset($_SESSION['pharmacist'])) {
@@ -11,76 +8,79 @@ if (!isset($_SESSION['pharmacist'])) {
     exit();
 }
 
-// ตรวจสอบว่า user_id ถูกส่งมาหรือไม่
-if (!isset($_GET['user_id'])) {
-    // กรณีที่ user_id ไม่ถูกส่งมา ให้ redirect ไปที่หน้าข้อผิดพลาดหรือหน้าอื่น
+// รับค่า user_id จาก POST
+$u_id = isset($_POST['user_id']) ? trim($_POST['user_id']) : "";
+
+// ถ้าไม่มี user_id ให้ redirect ไปยังหน้า error
+if (empty($u_id)) {
     header("Location: error_page.php?message=User ID not provided.");
     exit();
 }
 
-$user_id = intval($_GET['user_id']);
+// รับค่าข้อมูลที่อัปเดตจากฟอร์ม
+$full_name = $_POST['username'];
+$email = $_POST['email'];
+$phone_number = $_POST['phone'];
+$description = $_POST['description'];
+$house_no = $_POST['house_no'];
+$village_no = $_POST['village_no'];
+$sub_area = $_POST['sub_area'];
+$area = $_POST['area'];
+$province = $_POST['province'];
+$postal_code = $_POST['postal_code'];
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // รับข้อมูลจากฟอร์ม
-    $username = $_POST['username'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
-    $description = $_POST['description'];
-
-    // ตรวจสอบการอัปโหลดไฟล์
-    $image_path = $user['image']; // ใช้รูปเดิมถ้าไม่มีการอัปโหลดรูปใหม่
-    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-        $file_tmp_name = $_FILES['profile_picture']['tmp_name'];
-        $file_name = basename($_FILES['profile_picture']['name']);
-        $upload_dir = 'uploads/'; // โฟลเดอร์ที่เก็บไฟล์ที่อัปโหลด
-        $image_path = $upload_dir . $file_name;
-
-        // ตรวจสอบว่าโฟลเดอร์สำหรับเก็บไฟล์มีอยู่แล้วหรือไม่
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
-
-        // ย้ายไฟล์จาก temp directory ไปยังโฟลเดอร์ที่ต้องการ
-        if (move_uploaded_file($file_tmp_name, $image_path)) {
-            // อัปโหลดไฟล์สำเร็จ
-        } else {
-            echo "Failed to upload image.";
-            exit();
-        }
-    }
-
-    // เตรียมคำสั่ง SQL สำหรับอัปเดตข้อมูลโปรไฟล์
-    $sql = "UPDATE users SET full_name=?, email=?, phone_number=?, description=?, image=? WHERE user_id=?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param('sssssi', $username, $email, $phone, $description, $image_path, $user_id);
-
-    if ($stmt->execute()) {
-        header("Location: usermanage.php?user_id=$user_id");
-        exit();
+// ตรวจสอบว่ามีการอัปโหลดรูปภาพใหม่หรือไม่
+$image = 'default-image.jpg';
+if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+    $target_dir = 'uploads/';
+    $target_file = $target_dir . basename($_FILES['profile_picture']['name']);
+    if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target_file)) {
+        $image = $target_file;
     } else {
-        echo "Failed to update profile: " . $conn->error;
+        header("Location: error_page.php?message=Failed to upload image.");
+        exit();
     }
-
-    $stmt->close();
 }
 
-// ดึงข้อมูลโปรไฟล์ผู้ใช้
-$sql = "SELECT * FROM users WHERE user_id = ?";
+// อัปเดตข้อมูลผู้ใช้ในฐานข้อมูล
+$sql = "
+    UPDATE users
+    SET full_name = ?, email = ?, phone_number = ?, description = ?, image = ?
+    WHERE user_id = ?
+";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
+if (!$stmt) {
+    header("Location: error_page.php?message=Failed to prepare update statement.");
+    exit();
+}
+$stmt->bind_param('sssssi', $full_name, $email, $phone_number, $description, $image, $u_id);
+if (!$stmt->execute()) {
+    header("Location: error_page.php?message=Failed to update user information.");
+    exit();
+}
 
-if ($result->num_rows > 0) {
-    $user = $result->fetch_assoc();
-} else {
-    // กรณีที่ไม่พบข้อมูลผู้ใช้ ให้ redirect ไปที่หน้าข้อผิดพลาดหรือหน้าอื่น
-    header("Location: error_page.php?message=User not found.");
+$sql = "
+    UPDATE address
+    SET house_no = ?, village_no = ?, sub_area = ?, area = ?, province = ?, postal_code = ?
+    WHERE user_id = ?
+";
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    header("Location: error_page.php?message=Failed to prepare address update statement.");
+    exit();
+}
+$stmt->bind_param('ssssssi', $house_no, $village_no, $sub_area, $area, $province, $postal_code, $u_id);
+if (!$stmt->execute()) {
+    header("Location: error_page.php?message=Failed to update address information.");
     exit();
 }
 
 $stmt->close();
 $conn->close();
+
+// Redirect to profile page or show success message
+header("Location: usermanage.php?user_id=" . $u_id);
+exit();
 ?>
 
 <!DOCTYPE html>
@@ -96,61 +96,131 @@ $conn->close();
             background: #f8f9fa;
         }
 
+        .navbar-info {
+            background-color: #17a2b8;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 10px;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 220px;
+            height: calc(100% - 56px);
+            background-color: rgba(23, 162, 184, 0.9);
+            border-right: 1px solid #ddd;
+            z-index: 1000;
+            overflow-y: auto;
+            padding-top: 20px;
+        }
+
+        .sidebar .btn {
+            background-color: #17a2b8;
+            border: none;
+            color: #fff;
+            margin: 10px;
+            width: calc(100% - 20px);
+        }
+
+        .sidebar .btn:hover {
+            background-color: #138496;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            padding-left: 220px;
+            padding-top: 56px;
+        }
+
         .container {
             background: rgba(255, 255, 255, 0.9);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
         }
 
         .profile-picture {
             max-width: 150px;
-            max-height: 150px;
-            width: auto;
-            height: auto;
         }
     </style>
 </head>
 
 <body>
-    <div class="container" style="margin-left: 220px;">
-        <div class="d-flex justify-content-between align-items-center my-4">
-            <h1>MED TIME</h1>
+    <nav class="navbar navbar-expand-lg navbar-info">
+        <div class="container-fluid">
+            <h5 class="text-white">TAKECARE</h5>
             <div>
-                <a href="usermanage.php?user_id=<?php echo $u_id; ?>" class="btn btn-secondary me-2">ย้อนกลับ</a>
-                <a href="logout.php" class="btn btn-warning">ออกจากระบบ</a>
+                <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
             </div>
         </div>
-        <div class="container">
-            <h1 class="text-center">Edit Profile</h1>
-            <form method="post" action="editprofile.php?user_id=<?php echo $u_id; ?>" enctype="multipart/form-data">
-                <input type="hidden" name="user_id" value="<?php echo $u_id; ?>">
-                <div class="mb-3">
-                    <?php if (!empty($user['image'])): ?>
-                        <img src="<?php echo htmlspecialchars($user['image']); ?>" alt="Profile Picture" class="profile-picture" />
-                    <?php endif; ?>
-                    <input type="file" class="form-control" id="profile_picture" name="profile_picture">
-                </div>
-                <div class="mb-3">
-                    <label for="username" class="form-label">Username</label>
-                    <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($user['full_name']); ?>" required>
-                </div>
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
-                </div>
-                <div class="mb-3">
-                    <label for="phone" class="form-label">Phone</label>
-                    <input type="text" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone_number']); ?>" required>
-                </div>
-                <div class="mb-3">
-                    <label for="description" class="form-label">Description</label>
-                    <input type="text" class="form-control" id="description" name="description" value="<?php echo htmlspecialchars($user['description']); ?>" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Save</button>
-            </form>
-        </div>
+    </nav>
+
+    <aside class="sidebar">
+    </aside>
+    <div class="container">
+        <h1>Edit Profile</h1>
+        <form method="post" action="editprofile.php" enctype="multipart/form-data">
+            <input type="hidden" name="user_id" value="<?php echo htmlspecialchars($u_id); ?>">
+
+            <!-- ส่วนแสดงรูปโปรไฟล์และเลือกอัปโหลดใหม่ -->
+            <div class="mb-3">
+                <img src="<?php echo isset($user['image']) ? htmlspecialchars($user['image']) : 'default-image.jpg'; ?>" alt="Profile Picture" class="profile-picture">
+                <input type="file" class="form-control" id="profile_picture" name="profile_picture">
+            </div>
+
+            <!-- ส่วนข้อมูลของผู้ใช้ -->
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" value="<?php echo isset($user['full_name']) ? htmlspecialchars($user['full_name']) : ''; ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" value="<?php echo isset($user['email']) ? htmlspecialchars($user['email']) : ''; ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="phone" class="form-label">Phone</label>
+                <input type="text" class="form-control" id="phone" name="phone" value="<?php echo isset($user['phone_number']) ? htmlspecialchars($user['phone_number']) : ''; ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <input type="text" class="form-control" id="description" name="description" value="<?php echo isset($user['description']) ? htmlspecialchars($user['description']) : ''; ?>" required>
+            </div>
+
+            <!-- ส่วนที่อยู่ของผู้ใช้ -->
+            <div class="mb-3">
+                <label for="house_no" class="form-label">House Number</label>
+                <input type="text" class="form-control" id="house_no" name="house_no" value="<?php echo isset($user['house_no']) ? htmlspecialchars($user['house_no']) : ''; ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="village_no" class="form-label">Village Number</label>
+                <input type="text" class="form-control" id="village_no" name="village_no" value="<?php echo isset($user['village_no']) ? htmlspecialchars($user['village_no']) : ''; ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="sub_area" class="form-label">Sub Area</label>
+                <input type="text" class="form-control" id="sub_area" name="sub_area" value="<?php echo isset($user['sub_area']) ? htmlspecialchars($user['sub_area']) : ''; ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="area" class="form-label">Area</label>
+                <input type="text" class="form-control" id="area" name="area" value="<?php echo isset($user['area']) ? htmlspecialchars($user['area']) : ''; ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="province" class="form-label">Province</label>
+                <input type="text" class="form-control" id="province" name="province" value="<?php echo isset($user['province']) ? htmlspecialchars($user['province']) : ''; ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="postal_code" class="form-label">Postal Code</label>
+                <input type="text" class="form-control" id="postal_code" name="postal_code" value="<?php echo isset($user['postal_code']) ? htmlspecialchars($user['postal_code']) : ''; ?>" required>
+            </div>
+
+            <!-- ปุ่มบันทึกข้อมูล -->
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+    </div>
 </body>
 
 </html>

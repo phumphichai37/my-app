@@ -11,8 +11,9 @@ $dbName = $_ENV['DB_NAME'];
 
 $conn = mysqli_connect($hostName, $dbUser, $dbPassword, $dbName);
 
-
-if (!$conn) {
+if (mysqli_connect_errno()) {
     die("Connection failed: " . mysqli_connect_error());
 }
+
+mysqli_set_charset($conn, "utf8mb4");
 ?>

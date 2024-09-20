@@ -1,230 +1,321 @@
 <?php
+require 'connectdb.php';
 session_start();
 
-if (!isset($_SESSION['pharmacist'])) {
+// ตรวจสอบว่ามีการล็อกอินหรือไม่
+if (!isset($_SESSION['pharmacist_id'])) {
     header("Location: login.php");
     exit();
 }
 
-include 'connectdb.php';
-
-$query = "SELECT user_id, full_name FROM users";
-$result = $conn->query($query);
-
-$users = [];
-while ($row = $result->fetch_assoc()) {
-    $users[] = $row;
+// ตรวจสอบว่ามีการส่ง user_id มาหรือไม่
+if (!isset($_GET['user_id'])) {
+    die("Error: No user selected for the chat.");
 }
 
-$conn->close();
+$userId = $_GET['user_id'];
+$pharmacistId = $_SESSION['pharmacist_id'];
+
+// ดึงประวัติการสนทนา
+$query = "
+  SELECT m.sender_type, m.text, m.created_at, m.image 
+  FROM messages m
+  JOIN conversations c ON m.conversation_id = c.id
+  WHERE c.user_id = ? AND c.pharmacist_id = ?
+  ORDER BY m.created_at ASC
+";
+
+$stmt = $conn->prepare($query);
+$stmt->bind_param("ii", $userId, $pharmacistId);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select User</title>
+    <title>Chat</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
         body {
-            background: #f8f9fa;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            padding-left: 220px;
+            padding-top: 56px;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.9);
+            background-color: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chat-window {
+            height: 400px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            display: flex;
+        }
+
+        .message.user .text {
+            background-color: #e0f7fa;
+            color: #007bff;
+            margin-left: auto;
+            border-radius: 15px 15px 0 15px;
+        }
+
+        .message.pharmacist .text {
+            background-color: #f1f1f1;
+            color: #333;
+            margin-right: auto;
+            border-radius: 15px 15px 15px 0;
+        }
+
+        .message .text {
+            padding: 10px 15px;
+            max-width: 60%;
+        }
+
+        .message .timestamp {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .message .image {
+            margin-top: 10px;
+            max-width: 300px;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .message .image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        form {
             margin-top: 20px;
         }
 
-        .logo {
-            text-align: center;
-            margin-bottom: 20px;
+        .input-group {
+            border-radius: 30px;
+            overflow: hidden;
         }
 
-        .logo img {
-            max-width: 150px;
+        .form-control {
+            border: 1px solid #ddd;
+            border-radius: 0;
+            padding: 15px;
         }
 
-        @media (max-width: 575.98px) {
-            .container {
-                max-width: 90%;
-                padding: 10px;
-            }
+        .btn-info {
+            border-radius: 0;
+            padding: 15px 30px;
         }
 
-        .sidebar {
-            background-color: #F8F8FF;
-            height: 100vh;
+        .navbar-info {
+            background-color: #17a2b8;
             position: fixed;
             top: 0;
             left: 0;
-            width: 200px;
-            padding-top: 60px;
-            overflow-x: hidden;
+            width: 100%;
+            z-index: 1000;
+            padding: 10px;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 220px;
+            height: calc(100% - 56px);
+            background-color: rgba(23, 162, 184, 0.9);
+            border-right: 1px solid #ddd;
+            z-index: 1000;
+            overflow-y: auto;
+            padding-top: 20px;
         }
 
         .sidebar .btn {
+            background-color: #17a2b8;
+            border: none;
+            color: #fff;
             margin: 10px;
             width: calc(100% - 20px);
         }
 
-
-        .chat-box {
-            max-height: 400px;
-            overflow-y: auto;
-            background-color: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        .sidebar .btn:hover {
+            background-color: #138496;
         }
 
-        .chat-message {
-            margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 8px;
+        .btn-secondary {
+            background-color: #6c757d;
         }
 
-        .chat-message.user {
-            background-color: #e9ecef;
+        label[for="file-input"] {
+            cursor: pointer;
         }
 
-        .chat-message.pharmacist {
-            background-color: #d4edda;
+        label[for="file-input"] i {
+            font-size: 1.5rem;
+            color: #007bff;
         }
     </style>
 </head>
 
 <body>
-    <div class="sidebar">
-        <div class="logo">
-            <img src="asset/band.png" alt="โลโก้">
-        </div>
-        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
-        <a href="info.php" class="btn btn-secondary me-2">ข้อมูล</a>
-        <a href="users.php" class="btn btn-secondary me-2">ผู้ใช้งาน</a>
-        <a href="admin.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
-        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
-        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
-    </div>
-    <div class="container" style="margin-left: 220px;">
-        <div class="d-flex justify-content-between align-items-center my-4">
-            <h1>MED TIME</h1>
+    <nav class="navbar navbar-expand-lg navbar-info">
+        <div class="container-fluid">
+            <h5 class="text-white">TAKECARE</h5>
             <div>
-                <a href="index.php" class="btn btn-secondary me-2">ย้อนกลับ</a>
-                <a href="logout.php" class="btn btn-warning">ออกจากระบบ</a>
+                <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
             </div>
         </div>
-        <div class="container mt-5">
-            <h1>Select User to Chat</h1>
-            <ul class="list-group">
-                <?php foreach ($users as $user): ?>
-                    <li class="list-group-item">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#chatModal" data-user-id="<?php echo $user['user_id']; ?>" data-user-name="<?php echo htmlspecialchars($user['full_name']); ?>">
-                            Chat with <?php echo htmlspecialchars($user['full_name']); ?>
-                        </button>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
+    </nav>
 
-        <!-- Chat Modal -->
-        <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="chatModalLabel">Chat</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="chat-box" id="chat-box"></div>
-                        <form id="chat-form">
-                            <div class="input-group mt-3">
-                                <input type="text" class="form-control" id="message-input" placeholder="Type your message">
-                                <button class="btn btn-primary" type="submit">Send</button>
+    <aside class="sidebar">
+        <a href="index.php" class="btn btn-secondary">หน้าหลัก</a>
+        <a href="medicine.php" class="btn btn-secondary">ยา</a>
+        <a href="buy.php" class="btn btn-secondary">ร้านค้า</a>
+        <a href="users.php" class="btn btn-secondary">ผู้ใช้งาน</a>
+        <a href="pharmacist.php" class="btn btn-secondary">ข้อมูลส่วนตัว</a>
+        <a href="status.php" class="btn btn-secondary">สถานะ</a>
+    </aside>
+
+    <div class="container">
+        <a href="online.php" class="btn btn-secondary mb-3">ย้อนกลับไปที่รายชื่อผู้ใช้</a>
+        <h2>Chat</h2>
+        <div class="chat-window" id="chat-window">
+            <?php while ($row = mysqli_fetch_assoc($result)) { ?>
+                <div class="message <?= htmlspecialchars($row['sender_type']) === 'user' ? 'user' : 'pharmacist' ?>">
+                    <div class="text">
+                        <?= htmlspecialchars($row['text']) ?>
+                        <?php if ($row['image']) { ?>
+                            <div class="image">
+                                <img src=" data:image/*;base64, <?= htmlspecialchars($row['image']) ?>" alt="Image">
                             </div>
-                        </form>
+                        <?php } ?>
+                        <div class="timestamp"><?= htmlspecialchars($row['created_at']) ?></div>
                     </div>
                 </div>
-            </div>
+            <?php } ?>
         </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+        <form action="send_message.php" method="POST" enctype="multipart/form-data" id="chatForm">
+            <input type="hidden" name="user_id" value="<?= htmlspecialchars($userId) ?>">
+            <input type="hidden" id="compressedImage" name="compressedImage">
+            <div class="input-group mt-3">
+                <input type="text" name="message" class="form-control" placeholder="Type your message">
+                <label for="file-input" class="btn btn-outline-secondary">
+                    <i class="bi bi-upload"></i>
+                </label>
+                <input type="file" id="file-input" class="d-none" accept="image/*">
+                <button type="submit" class="btn btn-info" id="sendButton">Send</button>
+            </div>
+        </form>
+
+        <!-- เพิ่ม JavaScript ที่ท้ายไฟล์ -->
         <script>
-            const chatModal = document.getElementById('chatModal');
-            const chatBox = document.getElementById('chat-box');
-            let currentUserId = null;
-            let pharmacistId = "<?php echo $_SESSION['pharmacist_id']; ?>";
+            document.getElementById('file-input').addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 800;
+                            const scaleSize = MAX_WIDTH / img.width;
+                            canvas.width = MAX_WIDTH;
+                            canvas.height = img.height * scaleSize;
 
-            chatModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                currentUserId = button.getAttribute('data-user-id');
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                if (currentUserId) {
-                    loadMessages();
+                            const compressedImage = canvas.toDataURL('image/jpeg', 0.7);
+                            document.getElementById('compressedImage').value = compressedImage;
+                        };
+                    };
                 }
             });
 
-            document.getElementById('chat-form').addEventListener('submit', async function(event) {
-                event.preventDefault();
+            document.getElementById('chatForm').addEventListener('submit', function(e) {
+                e.preventDefault();
 
-                const text = document.getElementById('message-input').value;
+                const message = document.querySelector('input[name="message"]').value.trim();
+                const compressedImage = document.getElementById('compressedImage').value;
 
-                if (currentUserId) {
-                    const response = await fetch('chat.php', {
+                if (!message && !compressedImage) {
+                    alert("Please enter a message or upload an image.");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('user_id', document.querySelector('input[name="user_id"]').value);
+                formData.append('message', message);
+                if (compressedImage) {
+                    formData.append('compressedImage', compressedImage);
+                }
+
+                fetch('send_message.php', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: new URLSearchParams({
-                            'userId': currentUserId,
-                            'pharmacistId': pharmacistId,
-                            'text': text,
-                            'image': ''
-                        })
+                        body: formData,
+                    })
+                    .then(response => response.text())
+                    .then(result => {
+                        console.log(result);
+                        location.reload(); // Reload page to show new messages
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
                     });
 
-                    const message = await response.json();
-                    document.getElementById('message-input').value = '';
-                    const messageElement = document.createElement('div');
-                    messageElement.classList.add('chat-message', message.senderType);
-                    messageElement.textContent = message.text;
-                    chatBox.appendChild(messageElement);
-                    chatBox.scrollTop = chatBox.scrollHeight;
-
-                    // Ensure the modal stays open
-                    chatModal.addEventListener('hidden.bs.modal', function() {
-                        chatModal.removeEventListener('hidden.bs.modal', arguments.callee);
-                        chatModal.show();
-                    });
-                }
+                document.getElementById('sendButton').disabled = false;
             });
-
-            async function loadMessages() {
-                const response = await fetch(`chat.php?userId=${currentUserId}&pharmacistId=${pharmacistId}`);
-                const messages = await response.json();
-
-                chatBox.innerHTML = '';
-                messages.forEach(message => {
-                    const messageElement = document.createElement('div');
-                    messageElement.classList.add('chat-message', message.sender_type);
-                    messageElement.textContent = message.text;
-                    chatBox.appendChild(messageElement);
-                });
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-
-            setInterval(() => {
-                if (currentUserId) {
-                    loadMessages();
-                }
-            }, 5000);
         </script>
+
+        <!-- แก้ไขส่วนการแสดงข้อความและรูปภาพ -->
+        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
+            <div class="message <?= htmlspecialchars($row['sender_type']) === 'user' ? 'user' : 'pharmacist' ?>">
+                <div class="text">
+                    <?= htmlspecialchars($row['text']) ?>
+                    <?php if (!empty($row['image'])) { ?>
+                        <div class="image">
+                            <img src="<?= htmlspecialchars($row['image']) ?>" alt="Uploaded Image" onerror="this.style.display='none'">
+                        </div>
+                    <?php } ?>
+                    <div class="timestamp"><?= htmlspecialchars($row['created_at']) ?></div>
+                </div>
+            </div>
+        <?php } ?>
 </body>
 
 </html>
