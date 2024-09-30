@@ -23,13 +23,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $itemStock = $_POST['itemStock'];
 
         // จัดการการอัปโหลดรูปภาพ
-        if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+        if (isset($_FILES['file']) && isset($_FILES['file']['error']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
             $fileType = mime_content_type($_FILES['file']['tmp_name']);
             if (strpos($fileType, 'image/') === 0) {
                 // อ่านข้อมูลรูปภาพ
                 $imgData = file_get_contents($_FILES['file']['tmp_name']);
-                // เข้ารหัสรูปภาพเป็น Base64
-                $image = 'data:' . $fileType . ';base64,' . base64_encode($imgData);
+
+                $image = base64_encode($imgData);
 
                 // เพิ่มข้อมูลลงในฐานข้อมูล
                 $sql = "INSERT INTO medicine (medicine_name, description, type, price, stock, image) VALUES (?, ?, ?, ?, ?, ?)";
@@ -37,18 +37,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->bind_param('sssdis', $itemName, $itemDescription, $itemType, $itemPrice, $itemStock, $image);
 
                 if ($stmt->execute()) {
-                    $message = "Item '$itemName' added successfully!";
-                } else {
-                    $message = "Failed to add item: " . $conn->error;
-                }
+                    $medicine_id = $stmt->insert_id;
 
+                    // Handle the timings
+                    $itemTiming = isset($_POST['itemTiming']) ? $_POST['itemTiming'] : [];
+                    if (!empty($itemTiming)) {
+                        $timingSql = "INSERT INTO medicine_time (name_time, medicine_id) VALUES (?, ?)";
+                        $timingStmt = $conn->prepare($timingSql);
+
+                        foreach ($itemTiming as $timing) {
+                            if ($timing === 'other') {
+                                $otherTiming = isset($_POST['otherTimingInput']) ? trim($_POST['otherTimingInput']) : '';
+                                $otherTiming = htmlspecialchars($otherTiming);
+                                if (!empty($otherTiming)) {
+                                    $timingStmt->bind_param('si', $otherTiming, $medicine_id);
+                                    $timingStmt->execute();
+                                }
+                            } else {
+                                $timing = htmlspecialchars($timing);
+                                $timingStmt->bind_param('si', $timing, $medicine_id);
+                                $timingStmt->execute();
+                            }
+                        }
+                        $timingStmt->close();
+                    }
+                    $message = "เพิ่มรายการ '$itemName' สำเร็จ!";
+                } else {
+                    $message = "ไม่สามารถเพิ่มรายการได้: " . $conn->error;
+                }
                 $stmt->close();
             } else {
-                $message = "Uploaded file is not an image.";
+                $message = "ไฟล์ที่อัปโหลดไม่ใช่รูปภาพ.";
             }
         } else {
-            $message = "Error uploading image: " . $_FILES['file']['error'];
+            $message = "โปรดอัปโหลดรูปภาพ.";
         }
+    } else {
+        $message = "กรุณากรอกข้อมูลให้ครบถ้วน";
     }
 }
 
@@ -60,19 +85,57 @@ if (isset($_GET['delete'])) {
     $stmt->bind_param('i', $id);
 
     if ($stmt->execute()) {
-        $message = "Item deleted successfully!";
-        echo "<script>window.location.href = 'medicine.php';</script>";
+        $message = "ลบรายการสำเร็จ!";
+
+        // ดึงข้อมูลใหม่หลังจากทำการลบ
+        echo "<script>
+                alert('$message');
+                window.location.href = 'medicine.php'; // รีเฟรชหน้าเพจหลังจากลบเสร็จ
+              </script>";
     } else {
-        $message = "Failed to delete item: " . $conn->error;
+        $message = "ไม่สามารถลบรายการได้: " . $conn->error;
     }
 
     $stmt->close();
-
     exit();
 }
 
-$sql = "SELECT * FROM medicine";
+// ตรวจสอบว่ามีการสร้าง `$result` แล้วก่อนใช้งาน
+if (isset($result) && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        // ดำเนินการแสดงข้อมูลที่ดึงมา
+    }
+} else {
+    echo "ไม่พบข้อมูลยา";
+}
+
+
+// ค้นหายา
+$searchQuery = "";
+if (isset($_GET['search'])) {
+    $search = $conn->real_escape_string($_GET['search']);
+    $searchQuery = " WHERE m.medicine_name LIKE '%$search%' ";
+}
+
+// Retrieve medicine and their timings
+$sql = "SELECT m.*, GROUP_CONCAT(mt.name_time SEPARATOR ', ') AS timings
+        FROM medicine m
+        LEFT JOIN medicine_time mt ON m.medicine_id = mt.medicine_id
+        $searchQuery
+        GROUP BY m.medicine_id";
 $result = $conn->query($sql);
+
+// ดึงข้อมูลรูปภาพของเภสัชกร
+$pharmacist_data = $_SESSION['pharmacist'];
+$pharmacist_id = $pharmacist_data['pharmacist_id'];
+
+$sql = "SELECT image FROM pharmacist WHERE pharmacist_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $pharmacist_id);
+$stmt->execute();
+$result_image = $stmt->get_result();
+$pharmacist = $result_image->fetch_assoc();
+$image_path = $pharmacist['image'] ?? 'asset/default_user_icon.png';
 
 $conn->close();
 ?>
@@ -85,10 +148,17 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="style2.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
         body {
             background: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            margin-top: 35;
+
+
         }
 
         .container {
@@ -96,7 +166,7 @@ $conn->close();
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
+            margin-left: 220px;
 
         }
 
@@ -135,11 +205,14 @@ $conn->close();
             background-color: #138496;
         }
 
-        body {
-            margin: 0;
-            padding: 0;
-            padding-left: 220px;
-            padding-top: 56px;
+        .pharmacist-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 20px;
+            display: block;
+            border: 3px solid #fff;
         }
 
         .medicine-item {
@@ -150,6 +223,24 @@ $conn->close();
             max-width: 100%;
             height: auto;
             display: block;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table img {
+            max-width: 50px;
+            max-height: 50px;
+            object-fit: cover;
+        }
+
+        .card-img-top {
+            width: 100%;
+            height: 200px;
+            /* หรือขนาดที่คุณต้องการ */
+            object-fit: cover;
+            object-position: center;
         }
     </style>
 </head>
@@ -165,12 +256,28 @@ $conn->close();
     </nav>
 
     <aside class="sidebar">
-        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
-        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
-        <a href="users.php" class="btn btn-secondary me-2">ผู้ใช้งาน</a>
-        <a href="pharmacist.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
-        <a href="online.php" class="btn btn-secondary me-2">แชท</a>
-        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
+        <img src="<?php echo htmlspecialchars($image_path); ?>" alt="Pharmacist Image" class="pharmacist-image">
+        <a href="index.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-home"></i> หน้าหลัก
+        </a>
+        <a href="medicine.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-pills"></i> ยา
+        </a>
+        <a href="buy.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-store"></i> ร้านค้า
+        </a>
+        <a href="users.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-users"></i> ผู้ใช้งาน
+        </a>
+        <a href="pharmacist.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-user"></i> ข้อมูลส่วนตัว
+        </a>
+        <a href="online.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-comment-dots"></i> แชท
+        </a>
+        <a href="status.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-truck"></i> สถานะ
+        </a>
     </aside>
 
     <div class="container">
@@ -204,71 +311,207 @@ $conn->close();
                     <label for="file" class="form-label">เลือกรูปภาพ</label>
                     <input type="file" class="form-control" name="file" id="file" accept="image/*">
                 </div>
-                <input type="submit" class="btn btn-primary" value="เพิ่มข้อมูล">
+                <label class="form-label">เวลาที่ใช้ยา</label><br>
+                <div>
+                    <input type="checkbox" id="beforeBreakfast" name="itemTiming[]" value="ก่อนอาหารเช้า">
+                    <label for="beforeBreakfast">ก่อนอาหารเช้า</label>
+                    <input type="checkbox" id="afterBreakfast" name="itemTiming[]" value="หลังอาหารเช้า">
+                    <label for="afterBreakfast">หลังอาหารเช้า</label>
+                    <input type="checkbox" id="beforeLunch" name="itemTiming[]" value="ก่อนอาหารกลางวัน">
+                    <label for="beforeLunch">ก่อนอาหารกลางวัน</label>
+                    <input type="checkbox" id="afterLunch" name="itemTiming[]" value="หลังอาหารกลางวัน">
+                    <label for="afterLunch">หลังอาหารกลางวัน</label>
+                    <input type="checkbox" id="beforeDinner" name="itemTiming[]" value="ก่อนอาหารเย็น">
+                    <label for="beforeDinner">ก่อนอาหารเย็น</label>
+                    <input type="checkbox" id="afterDinner" name="itemTiming[]" value="หลังอาหารเย็น">
+                    <label for="afterDinner">หลังอาหารเย็น</label>
+                    <input type="checkbox" id="beforesleep" name="itemTiming[]" value="ก่อนนอน">
+                    <label for="beforesleep">ก่อนนอน</label>
+                    <div>
+                        <input type="checkbox" id="otherTiming" name="itemTiming[]" value="other" onclick="toggleOtherTiming()">
+                        <label for="otherTiming">อื่นๆ</label>
+                        <input type="text" id="otherTimingInput" name="otherTimingInput" style="display:none;">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">เพิ่มยา</button>
             </form>
         </div>
 
-        <div class="row mt-4">
-            <?php
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo '<div class="col-lg-4 col-md-6 medicine-item">';
-                    echo '<div class="card text-black h-100">';
-                    echo '<div class="card-body">';
-                    echo '<div class="d-flex justify-content-end">';
-                    echo '<a href="javascript:void(0)" onclick="deleteItem(' . $row["medicine_id"] . ', event)" class="btn btn-danger mt-2">ลบ</a>';
-                    echo '</div>';
-                    echo '<h5 class="card-title">' . $row["medicine_name"] . '</h5>';
-                    $shortDescription = mb_substr($row["description"], 0, 100);
-                    echo '<p class="card-text">' . $shortDescription . '<span id="dots-' . $row["medicine_id"] . '">...</span>';
-                    echo '<span id="more-' . $row["medicine_id"] . '" style="display:none;">' . mb_substr($row["description"], 100) . '</span>';
-                    echo '<a href="javascript:void(0)" onclick="showMore(' . $row["medicine_id"] . ', event)" id="readMoreBtn-' . $row["medicine_id"] . '"> อ่านเพิ่มเติม</a></p>';
+        <div class="mb-4">
+            <h2>ค้นหารายการยา</h2>
+            <form method="get" action="medicine.php">
+                <div class="mb-3">
+                    <input type="text" class="form-control" name="search" placeholder="ค้นหาชื่อยา">
+                </div>
+                <button type="submit" class="btn btn-primary">ค้นหา</button>
+            </form>
+        </div>
 
-                    // ตรวจสอบว่าเป็นรูปภาพ Base64 หรือ URL
-                    if (preg_match('/^data:image\/(\w+);base64,/', $row["image"])) {
-                        // แสดงผลรูปภาพ Base64
-                        echo '<img src="' . $row["image"] . '" alt="Image" style="max-width:100%; height:auto;">';
-                    } elseif (filter_var($row["image"], FILTER_VALIDATE_URL)) {
-                        // แสดงผลรูปภาพที่เป็น URL
-                        echo '<img src="' . $row["image"] . '" alt="Image" style="max-width:100%; height:auto;">';
-                    } else {
-                        // กรณีไม่มีรูปภาพ
-                        echo '<img src="placeholder.jpg" alt="No Image" style="max-width:100%; height:auto;">';
-                    }
+        <h2>รายการยา</h2>
+        <div class="row">
+            <?php while ($row = $result->fetch_assoc()): ?>
+                <div class="col-lg-4 col-md-6 medicine-item">
+                    <div class="card text-black h-100">
+                        <img src="<?php
+                                    $image = $row['image'];
+                                    echo (strpos($image, 'http') === 0 || strpos($image, 'https') === 0)
+                                        ? $image // ถ้าเป็น URL
+                                        : 'data:image/*;base64,' . $image;
+                                    ?>"
+                            class="card-img-top"
+                            alt="<?php echo $row['medicine_name']; ?>">
+                        <div class="card-body">
+                            <h5 class="card-title"><?php echo $row["medicine_name"]; ?></h5>
+                            <p class="card-text">
+                                <strong>รายละเอียด:</strong>
+                                <span class="short-description"><?php echo mb_substr(htmlspecialchars($row["description"]), 0, 50); ?>...</span>
+                                <span class="full-description" style="display:none;"><?php echo htmlspecialchars($row["description"]); ?></span>
+                                <button class="btn btn-link read-more" onclick="toggleDescription(this)">อ่านเพิ่มเติม</button>
+                            </p>
 
-                    echo '</div>';
-                    echo '</div>';
-                    echo '</div>';
-                }
-            } else {
-                echo '<p>ไม่มีรายการยา</p>';
-            }
-            ?>
+
+
+                            <p class="card-text"><strong>ประเภทยา:</strong> <?php echo $row["type"]; ?></p>
+                            <p class="card-text"><strong>ราคา:</strong> <?php echo number_format($row["price"], 2); ?> บาท</p>
+                            <p class="card-text"><strong>จำนวนสต็อก:</strong> <?php echo $row["stock"]; ?> ชิ้น</p>
+                            <div>
+                                <strong>เวลาใช้ยา:</strong>
+                                <?php if (!empty($row["timings"])): ?>
+                                    <ul>
+                                        <?php
+                                        $timings = explode(', ', $row["timings"]);
+                                        foreach ($timings as $timing):
+                                            // ตรวจสอบและข้ามการแสดงผล 'other'
+                                            if ($timing !== 'other'):
+                                        ?>
+                                                <li><?php echo htmlspecialchars($timing); ?></li>
+                                        <?php
+                                            endif;
+                                        endforeach;
+                                        ?>
+                                    </ul>
+                                <?php else: ?>
+                                    <p>ไม่มีข้อมูล</p>
+                                <?php endif; ?>
+                            </div>
+
+                            <button class="btn btn-warning mt-2 edit-button" data-id="<?php echo $row["medicine_id"]; ?>" data-name="<?php echo $row["medicine_name"]; ?>" data-description="<?php echo $row["description"]; ?>" data-type="<?php echo $row["type"]; ?>" data-price="<?php echo $row["price"]; ?>" data-stock="<?php echo $row["stock"]; ?>">แก้ไข</button>
+                            <a href="medicine.php?delete=<?php echo $row['medicine_id']; ?>" class="btn btn-danger mt-2">ลบ</a>
+                        </div>
+                    </div>
+                </div>
+            <?php endwhile; ?>
         </div>
     </div>
 
-    <script>
-        function showMore(id, event) {
-            event.preventDefault(); // ป้องกันการเลื่อนหน้าด้วย
-            var dots = document.getElementById("dots-" + id);
-            var moreText = document.getElementById("more-" + id);
-            var btnText = document.getElementById("readMoreBtn-" + id);
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editMedicineForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editModalLabel">แก้ไขข้อมูลยา</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="medicineId" name="medicineId">
+                        <div class="mb-3">
+                            <label for="editItemName" class="form-label">ชื่อยา</label>
+                            <input type="text" class="form-control" id="editItemName" name="editItemName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editItemDescription" class="form-label">รายละเอียด</label>
+                            <input type="text" class="form-control" id="editItemDescription" name="editItemDescription" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editItemType" class="form-label">ประเภทยา</label>
+                            <input type="text" class="form-control" id="editItemType" name="editItemType" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editItemPrice" class="form-label">ราคา</label>
+                            <input type="number" step="0.01" class="form-control" id="editItemPrice" name="editItemPrice" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editItemStock" class="form-label">จำนวนสินค้า</label>
+                            <input type="number" class="form-control" id="editItemStock" name="editItemStock" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                        <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-            if (dots.style.display === "none") {
-                dots.style.display = "inline";
-                btnText.innerHTML = " อ่านเพิ่มเติม";
-                moreText.style.display = "none";
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $(document).on('click', '.edit-button', function() {
+                var id = $(this).data('id');
+                var name = $(this).data('name');
+                var description = $(this).data('description');
+                var type = $(this).data('type');
+                var price = $(this).data('price');
+                var stock = $(this).data('stock');
+
+                $('#medicineId').val(id);
+                $('#editItemName').val(name);
+                $('#editItemDescription').val(description);
+                $('#editItemType').val(type);
+                $('#editItemPrice').val(price);
+                $('#editItemStock').val(stock);
+
+                $('#editModal').modal('show');
+            });
+
+            $('#editMedicineForm').on('submit', function(e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: 'update_medicine.php',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        console.log(response); // ตรวจสอบผลลัพธ์
+                        alert('การแก้ไขสำเร็จ');
+                        location.reload(); // รีเฟรชหน้า
+                    },
+                    error: function(xhr, status, error) {
+                        console.log(xhr.responseText);
+                        alert('เกิดข้อผิดพลาด: ' + error);
+                    }
+                });
+
+            });
+        });
+
+        function toggleOtherTiming() {
+            const otherInput = document.getElementById("otherTimingInput");
+            const otherCheckbox = document.getElementById("otherTiming");
+            if (otherCheckbox.checked) {
+                otherInput.style.display = "inline-block";
             } else {
-                dots.style.display = "none";
-                btnText.innerHTML = " ซ่อนข้อความ";
-                moreText.style.display = "inline";
+                otherInput.style.display = "none";
+                otherInput.value = '';
             }
         }
 
-        function deleteItem(id, event) {
-            event.preventDefault(); // ป้องกันการเลื่อนหน้าด้วย
-            if (confirm('Are you sure you want to delete this item?')) {
-                window.location.href = 'medicine.php?delete=' + id;
+        function toggleDescription(button) {
+            const shortDescription = button.parentElement.querySelector('.short-description');
+            const fullDescription = button.parentElement.querySelector('.full-description');
+
+            if (fullDescription.style.display === 'none') {
+                fullDescription.style.display = 'inline';
+                shortDescription.style.display = 'none';
+                button.textContent = 'ย่อ';
+            } else {
+                fullDescription.style.display = 'none';
+                shortDescription.style.display = 'inline';
+                button.textContent = 'อ่านเพิ่มเติม';
             }
         }
     </script>

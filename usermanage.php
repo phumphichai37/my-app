@@ -16,30 +16,44 @@ $_SESSION['user_id'] = $u_id; // เก็บ user_id ไว้ใน Session
 // ถ้าการ request เป็น POST (การอัปเดตข้อมูล)
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // รับข้อมูลจาก form
-    $user_id = intval($_POST['user_id']);
+    $user_id = intval($_POST['user_id']); // ใช้ user_id ที่ส่งมาจากฟอร์ม
     $description = trim($_POST['description']);
+    $drug_allergy = trim($_POST['drug_allergy']);
 
-    // อัพเดตข้อมูล description ในฐานข้อมูล
-    $sql = "UPDATE users SET description = ? WHERE user_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param('si', $description, $user_id);
+    // จัดการรูปภาพที่อัปโหลด
+    if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == UPLOAD_ERR_OK) {
+        // อ่านไฟล์และแปลงเป็น base64
+        $imageData = file_get_contents($_FILES['profile_image']['tmp_name']);
+        $imageBase64 = base64_encode($imageData);
 
+        // อัพเดตข้อมูล description, drug_allergy และรูปภาพในฐานข้อมูล
+        $sql = "UPDATE users SET description = ?, drug_allergy = ?, image = ? WHERE user_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('sssi', $description, $drug_allergy, $imageBase64, $user_id);
+    } else {
+        // อัพเดตเฉพาะ description และ drug_allergy
+        $sql = "UPDATE users SET description = ?, drug_allergy = ? WHERE user_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('ssi', $description, $drug_allergy, $user_id);
+    }
+
+    // Execute the statement
     if ($stmt->execute()) {
         // อัพเดตสำเร็จ redirect ไปยังหน้า profile
+        $_SESSION['success_message'] = "แก้ไขข้อมูลเสร็จสิ้น"; // เพิ่มข้อความสำเร็จใน session
         header("Location: usermanage.php?user_id=$user_id");
         exit();
     } else {
         // กรณีมีปัญหาในการอัพเดต
-        echo "Error updating record: " . $conn->error;
+        echo "Error updating record: " . $stmt->error;
     }
 
     $stmt->close();
 }
-
 // ดึงข้อมูลผู้ใช้จากฐานข้อมูล
 $user_id = intval($u_id);
 $sql = "
-    SELECT users.full_name, users.email, users.birthday, users.phone_number, users.image, users.description,
+    SELECT users.*,
             address.house_no, address.village_no, address.sub_area, address.area, address.province, address.postal_code
       FROM users
       JOIN address ON users.user_id = address.user_id
@@ -52,7 +66,6 @@ $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 
 $stmt->close();
-$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -68,40 +81,6 @@ $conn->close();
             background: #f8f9fa;
         }
 
-        .navbar-info {
-            background-color: #17a2b8;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            padding: 10px;
-        }
-
-        .sidebar {
-            position: fixed;
-            top: 56px;
-            left: 0;
-            width: 220px;
-            height: calc(100% - 56px);
-            background-color: rgba(23, 162, 184, 0.9);
-            border-right: 1px solid #ddd;
-            z-index: 1000;
-            overflow-y: auto;
-            padding-top: 20px;
-        }
-
-        .sidebar .btn {
-            background-color: #17a2b8;
-            border: none;
-            color: #fff;
-            margin: 10px;
-            width: calc(100% - 20px);
-        }
-
-        .sidebar .btn:hover {
-            background-color: #138496;
-        }
 
         body {
             margin: 0;
@@ -140,8 +119,8 @@ $conn->close();
         }
 
         .profile-picture {
-            max-width: 150px;
-            max-height: 150px;
+            max-width: 50%;
+            max-height: 50%;
             width: auto;
             height: auto;
             background-color: #ddd;
@@ -151,65 +130,57 @@ $conn->close();
             color: #666;
             font-size: 1.2em;
             text-align: center;
+            margin-left: 10%;
         }
     </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-info">
-        <div class="container-fluid">
-            <h5 class="text-white">TAKECARE</h5>
-            <div>
-                <a href="users.php" class="btn btn-light me-2">ย้อนกลับ</a>
-                <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
-            </div>
-        </div>
-    </nav>
-
-    <aside class="sidebar">
-        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
-        <a href="users.php" class="btn btn-secondary me-2">ผู้ใช้งาน</a>
-        <a href="pharmacist.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
-        <a href="online.php" class="btn btn-secondary me-2">แชท</a>
-        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
-    </aside>
+    <?php include('css/navSIde.php');?>
 
     <div class="container">
+        <?php
+        // แสดงข้อความสำเร็จ
+        if (isset($_SESSION['success_message'])) {
+            echo "<div class='alert alert-success'>" . $_SESSION['success_message'] . "</div>";
+            unset($_SESSION['success_message']); // ลบข้อความหลังจากแสดง
+        }
+        ?>
         <div class="profile-container">
-            <!-- Use Bootstrap Grid system for 2 columns -->
             <div class="row">
-                <!-- Column for Profile Picture -->
                 <div class="col-md-4">
                     <strong>Profile Picture:</strong><br>
                     <?php if (!empty($user['image'])): ?>
-                        <img src="data:image/jpeg;base64,<?php echo base64_encode(file_get_contents($user['image'])); ?>" alt="Profile Picture" class="profile-picture">
+                        <img src="data:image/*;base64,<?= $user['image']; ?>" alt="Profile Picture" class="profile-picture">
                     <?php else: ?>
-                        <div class="profile-picture">
-                            <span>Profile</span>
-                        </div>
+                        <img src="asset/default_user_icon.png" alt="Default Profile Picture" class="profile-picture">
                     <?php endif; ?>
                 </div>
 
-                <!-- Column for User Details -->
                 <div class="col-md-8">
                     <div class="profile-details">
-                        <form method="post" action="">
-                            <strong>Description:</strong><br />
+                        <form method="post" action="" enctype="multipart/form-data">
+                            <strong>Change Profile Picture:</strong><br />
+                            <input type="hidden" name="user_id" value="<?php echo $user_id; ?>">
+                            <input type="file" name="profile_image" class="form-control"><br>
+                            <strong>ประวัติการรักษา:</strong><br />
                             <textarea name="description" class="form-control" rows="5"><?php echo htmlspecialchars($user['description'] ?? ''); ?></textarea><br />
+                            <input type="hidden" name="user_id" value="<?php echo $user_id; ?>">
+                            <strong>ประวัติการแพ้ยา:</strong><br />
+                            <textarea name="drug_allergy" class="form-control" rows="5"><?php echo htmlspecialchars($user['drug_allergy'] ?? ''); ?></textarea><br />
                             <input type="hidden" name="user_id" value="<?php echo $user_id; ?>">
                             <button type="submit" class="btn btn-primary">ตกลง</button>
                         </form> <br />
-                        <strong>Username:</strong> <?php echo htmlspecialchars($user['full_name'] ?? ''); ?> 
-                        <strong>Email:</strong> <?php echo htmlspecialchars($user['email'] ?? ''); ?> <br />
-                        <strong>Birthday:</strong> <?php echo htmlspecialchars($user['birthday'] ?? ''); ?> 
-                        <strong>Phone:</strong> <?php echo htmlspecialchars($user['phone_number'] ?? ''); ?> <br />
-                        <strong>House No:</strong> <?php echo htmlspecialchars($user['house_no'] ?? ''); ?> 
-                        <strong>Village No:</strong> <?php echo htmlspecialchars($user['village_no'] ?? ''); ?> <br />
-                        <strong>Sub Area:</strong> <?php echo htmlspecialchars($user['sub_area'] ?? ''); ?> 
-                        <strong>Area:</strong> <?php echo htmlspecialchars($user['area'] ?? ''); ?> <br />
-                        <strong>Province:</strong> <?php echo htmlspecialchars($user['province'] ?? ''); ?> 
-                        <strong>Postal Code:</strong> <?php echo htmlspecialchars($user['postal_code'] ?? ''); ?> <br />
+                        <strong>ชื่อ-สกุล:</strong> <?php echo htmlspecialchars($user['full_name'] ?? ''); ?> <br />
+                        <strong>อัเมล:</strong> <?php echo htmlspecialchars($user['email'] ?? ''); ?> <br />
+                        <strong>วันที่เกิด:</strong> <?php echo htmlspecialchars($user['birthday'] ?? ''); ?> <br />
+                        <strong>เบอร์โทรศัพท์:</strong> <?php echo htmlspecialchars($user['phone_number'] ?? ''); ?> <br />
+                        <strong>บ้านเลขที่:</strong> <?php echo htmlspecialchars($user['house_no'] ?? ''); ?> <br />
+                        <strong>หมู่:</strong> <?php echo htmlspecialchars($user['village_no'] ?? ''); ?> <br />
+                        <strong>ตำบล:</strong> <?php echo htmlspecialchars($user['sub_area'] ?? ''); ?> <br />
+                        <strong>อำเภอ:</strong> <?php echo htmlspecialchars($user['area'] ?? ''); ?> <br />
+                        <strong>จังหวัด:</strong> <?php echo htmlspecialchars($user['province'] ?? ''); ?> <br />
+                        <strong>รหัสไปรษณีย์:</strong> <?php echo htmlspecialchars($user['postal_code'] ?? ''); ?> <br />
                     </div>
                 </div>
             </div>

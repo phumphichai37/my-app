@@ -37,6 +37,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
             background: #f8f9fa;
         }
 
+        .navbar-info {
+            background-color: #17a2b8;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 10px;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 220px;
+            height: calc(100% - 56px);
+            background-color: rgba(23, 162, 184, 0.9);
+            border-right: 1px solid #ddd;
+            z-index: 1000;
+            overflow-y: auto;
+            padding-top: 20px;
+        }
+
+        .sidebar .btn {
+            background-color: #17a2b8;
+            border: none;
+            color: #fff;
+            margin: 10px;
+            width: calc(100% - 20px);
+        }
+
+        .sidebar .btn:hover {
+            background-color: #138496;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -44,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
             padding-top: 56px;
         }
 
-        
+
         .container {
             background: rgba(255, 255, 255, 0.9);
             padding: 20px;
@@ -121,17 +156,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
 </head>
 
 <body>
-    <?php 
-    include('css/navSIde.php');
-    ?>
+    <nav class="navbar navbar-expand-lg navbar-info">
+        <div class="container-fluid">
+            <h5 class="text-white">TAKECARE</h5>
+            <div>
+                <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
+            </div>
+        </div>
+    </nav>
+
+    <aside class="sidebar">
+        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
+        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
+        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
+        <a href="pharmacist.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
+        <a href="online.php" class="btn btn-secondary me-2">แชท</a>
+        <a href="status.php" class="btn btn-secondary me-2">สถานะ</a>
+    </aside>
 
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2>ข้อมูลผู้ป่วย</h2>
         </div>
-        <div class="btn-group">
+        <!-- <div class="btn-group">
             <a href="adduser.php" class="btn btn-success">เพิ่มผู้ใช้งาน</a>
-        </div>
+        </div> -->
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -141,7 +190,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
                     <th scope="col">เบอร์โทรศัพท์</th>
                     <th scope="col">อีเมล</th>
                     <th scope="col">แก้ไข</th>
-                    <th scope="col">ลบ</th>
                 </tr>
             </thead>
             <tbody>
@@ -158,13 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
                             <td>{$row['phone_number']}</td>
                             <td class='email'>{$row['email']}</td>
                             <td class='table-buttons'>
-                                <a href='usermanage.php?user_id={$row['user_id']}' class='btn btn-success'>แก้ไข</a>
-                            </td>
-                            <td class='table-buttons'>
-                                <form method='POST' onsubmit='return confirm(\"Are you sure you want to delete this user?\");'>
-                                    <input type='hidden' name='delete_user_id' value='{$row['user_id']}'>
-                                    <button type='submit' class='btn btn-danger'>ลบ</button>
-                                </form>
+                                <a href='userCart.php?user_id={$row['user_id']}' class='btn btn-success'>สั่งซื้อ</a>
                             </td>
                         </tr>";
                     }

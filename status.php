@@ -1,4 +1,11 @@
 <?php
+session_start();
+
+if (!isset($_SESSION["pharmacist"])) {
+    header("Location: login.php");
+    exit();
+}
+
 header('Content-Type: text/html; charset=utf-8');
 include 'connectdb.php';
 error_reporting(E_ALL);
@@ -54,14 +61,88 @@ function getOrderCounts()
     return $counts;
 }
 
-// ตรวจสอบการลบออเดอร์
+if (isset($_POST['delete_order_ids'])) {
+    $order_ids = $_POST['delete_order_ids']; // เป็นอาร์เรย์ของ ID
+    $deletedOrders = 0;
+
+    foreach ($order_ids as $order_id) {
+        if (deleteOrder(intval($order_id))) {
+            $deletedOrders++;
+        }
+    }
+
+    if ($deletedOrders > 0) {
+        echo "<script>alert('ลบออเดอร์ $deletedOrders รายการสำเร็จ');</script>";
+        // รีเฟรชหน้าเพื่อป้องกันการทำซ้ำของ POST
+        echo "<script>window.location.href = 'status.php';</script>";
+        exit(); // ป้องกันการทำงานต่อหลังจากลบ
+    } else {
+        echo "<script>alert('เกิดข้อผิดพลาดในการลบออเดอร์');</script>";
+    }
+}
+
+
+
 if (isset($_POST['delete_order_id'])) {
     $order_id = intval($_POST['delete_order_id']);
     if (deleteOrder($order_id)) {
         echo "<script>alert('ลบออเดอร์สำเร็จ');</script>";
+        // รีเฟรชหน้าเพื่อป้องกันการทำซ้ำของ POST
+        echo "<script>window.location.href = 'status.php';</script>";
+        exit(); // ป้องกันการทำงานต่อหลังจากลบ
     } else {
         echo "<script>alert('เกิดข้อผิดพลาดในการลบออเดอร์');</script>";
     }
+}
+
+
+function getOrderDetails($order_id)
+{
+    global $conn;
+
+    // เริ่มการบันทึก error
+    error_log("Starting getOrderDetails for order_id: " . $order_id);
+
+    $sql = "SELECT o.*, 
+                   COALESCE(u.full_name, 'ไม่มี') AS full_name, 
+                   GROUP_CONCAT(CONCAT(od.quantity, 'x ', m.medicine_name) SEPARATOR ', ') AS items
+            FROM orders o
+            LEFT JOIN users u ON o.user_id = u.user_id
+            JOIN order_details od ON o.order_id = od.order_id
+            JOIN medicine m ON od.medicine_id = m.medicine_id
+            WHERE o.order_id = ?
+            GROUP BY o.order_id";
+
+    error_log("SQL Query: " . $sql);
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        return false;
+    }
+
+    $stmt->bind_param("i", $order_id);
+    if (!$stmt->execute()) {
+        error_log("Execute failed: " . $stmt->error);
+        return false;
+    }
+
+    $result = $stmt->get_result();
+    if ($result->num_rows === 0) {
+        error_log("No rows found for order_id: " . $order_id);
+        return false;
+    }
+
+    $order_details = $result->fetch_assoc();
+    if (!$order_details) {
+        error_log("Failed to fetch order details for order_id: " . $order_id);
+        return false;
+    }
+
+    error_log("Successfully retrieved order details for order_id: " . $order_id);
+    error_log("Order details: " . print_r($order_details, true));
+
+    return $order_details;
 }
 
 // ตรวจสอบการส่งฟอร์มค้นหา
@@ -131,6 +212,16 @@ $orderCounts = getOrderCounts(); // ดึงข้อมูลการนั�
             background-color: #138496;
         }
 
+        .pharmacist-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 20px;
+            display: block;
+            border: 3px solid #fff;
+        }
+
         .status-card {
             border-radius: 8px;
             padding: 15px;
@@ -153,28 +244,77 @@ $orderCounts = getOrderCounts(); // ดึงข้อมูลการนั�
         .completed {
             background-color: #198754;
         }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        @media print {
+
+            /* Center the content */
+            body {
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+
+            .order-details {
+                width: 80%;
+                /* Set the width you want */
+                text-align: center;
+                /* Center the text */
+            }
+
+            /* Hide buttons and unnecessary elements */
+            button,
+            .icons,
+            .no-print {
+                display: none;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-info">
-        <div class="container-fluid">
-            <h5 class="text-white">TAKECARE</h5>
-            <div>
-                <a href="users.php" class="btn btn-light me-2">ย้อนกลับ</a>
-                <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
-            </div>
-        </div>
-    </nav>
-
-    <aside class="sidebar">
-        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
-        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
-        <a href="users.php" class="btn btn-secondary me-2">ผู้ใช้งาน</a>
-        <a href="pharmacist.php" class="btn btn-secondary me-2">ข้อมูลส่วนตัว</a>
-        <a href="online.php" class="btn btn-secondary me-2">แชท</a>
-    </aside>
+    <?php include('css/navSIde.php'); ?>
 
     <div class="container mt-4">
         <h2 class="mb-4">ติดตามรายการสินค้า</h2>
@@ -221,67 +361,143 @@ $orderCounts = getOrderCounts(); // ดึงข้อมูลการนั�
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">รายการออเดอร์</h5>
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>รหัสออเดอร์</th>
-                                <th>เวลาสั่งซื้อ</th>
-                                <th>สถานะการชำระเงิน</th>
-                                <th>ราคา</th>
-                                <th>สถานะออเดอร์</th>
-                                <th>การดำเนินการ</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($row = $orders->fetch_assoc()): ?>
+                <form method="POST" id="deleteOrdersForm">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($row['order_id']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['order_time']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['payment_info']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['total_price']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['status_payment']); ?></td>
-                                    <td>
-                                        <select class="form-select" id="status-<?php echo $row['order_id']; ?>">
-                                            <option value="รอการอนุมัติ" <?php echo $row['status_payment'] == 'รอการอนุมัติ' ? 'selected' : ''; ?>>รอการอนุมัติ</option>
-                                            <option value="กำลังจัดเตรียมสินค้า" <?php echo $row['status_payment'] == 'กำลังจัดเตรียมสินค้า' ? 'selected' : ''; ?>>กำลังจัดเตรียมสินค้า</option>
-                                            <option value="กำลังจัดส่ง" <?php echo $row['status_payment'] == 'กำลังจัดส่ง' ? 'selected' : ''; ?>>กำลังจัดส่ง</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-primary btn-sm" onclick="updateStatus(<?php echo $row['order_id']; ?>)">อัปเดตสถานะ</button>
-                                        <form method="POST" style="display: inline;">
-                                            <input type="hidden" name="delete_order_id" value="<?php echo $row['order_id']; ?>">
-                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('คุณต้องการลบออเดอร์นี้หรือไม่?');">ลบ</button>
-                                        </form>
-                                    </td>
+                                    <th><input type="checkbox" id="selectAll"></th> <!-- Checkbox to select all -->
+                                    <th>รหัสออเดอร์</th>
+                                    <th>เวลาสั่งซื้อ</th>
+                                    <th>สถานะการชำระเงิน</th>
+                                    <th>ราคา</th>
+                                    <th>การดำเนินการ</th>
                                 </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                <?php while ($row = $orders->fetch_assoc()): ?>
+                                    <tr class="order-row" data-order-id="<?php echo $row['order_id']; ?>">
+                                        <td><input type="checkbox" name="delete_order_ids[]" value="<?php echo $row['order_id']; ?>"></td> <!-- Checkbox for each order -->
+                                        <td><?php echo htmlspecialchars($row['order_id']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['order_time']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['payment_info']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['total_price']); ?></td>
+                                        <td>
+                                            <select class="form-select" id="status-<?php echo $row['order_id']; ?>">
+                                                <option value="รอการอนุมัติ" <?php echo $row['status_payment'] == 'รอการอนุมัติ' ? 'selected' : ''; ?>>รอการอนุมัติ</option>
+                                                <option value="กำลังจัดเตรียมสินค้า" <?php echo $row['status_payment'] == 'กำลังจัดเตรียมสินค้า' ? 'selected' : ''; ?>>กำลังจัดเตรียมสินค้า</option>
+                                                <option value="กำลังจัดส่ง" <?php echo $row['status_payment'] == 'กำลังจัดส่ง' ? 'selected' : ''; ?>>กำลังจัดส่ง</option>
+                                                <option value="จัดส่งเสร็จสิ้น" <?php echo $row['status_payment'] == 'จัดส่งเสร็จสิ้น' ? 'selected' : ''; ?>>จัดส่งเสร็จสิ้น</option>
+                                            </select>
+                                            <button class="btn btn-primary btn-sm" onclick="updateStatus(<?php echo $row['order_id']; ?>)">อัปเดตสถานะ</button>
+                                            <button type="button" class="btn btn-info btn-sm" onclick="showOrderDetails(<?php echo $row['order_id']; ?>)">ดูรายละเอียด</button>
+
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-danger" onclick="confirmDelete()">ลบที่เลือก</button> <!-- Button to delete selected orders -->
+                    </div>
+                </form>
             </div>
         </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function updateStatus(orderId) {
-            var status = document.getElementById("status-" + orderId).value;
-            
-            // Send an AJAX request to update the status
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", "update_order_status.php", true);
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4 && xhr.status == 200) {
-                    alert("อัปเดตสถานะสำเร็จ");
-                    location.reload(); // Reload the page to see the updated status
+        <!-- Modal for order details -->
+        <div id="orderModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h1>ร้าน IT Pharmacy</h1>
+                <div id="orderDetails"></div>
+                <button class="no-print" onclick="printOrder()">Print</button>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            function updateStatus(orderId) {
+                var status = document.getElementById("status-" + orderId).value;
+
+                // Send an AJAX request to update the status
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "update_order_status.php", true);
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        alert("อัปเดตสถานะสำเร็จ");
+                        location.reload(); // Reload the page to see the updated status
+                    }
+                };
+                xhr.send("order_id=" + orderId + "&status=" + encodeURIComponent(status));
+            }
+
+            function showOrderDetails(orderId) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", "get_orders.php?order_id=" + orderId, true);
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        try {
+                            var orderDetails = JSON.parse(xhr.responseText);
+                            if (orderDetails) {
+                                var detailsHtml = `
+                        <p><strong>ชื่อผู้สั่งซื้อ:</strong> ${orderDetails.full_name || 'ไม่มี'}</p>
+                        <p><strong>รหัสออเดอร์:</strong> ${orderDetails.order_id}</p>
+                        <p><strong>เวลาสั่งซื้อ:</strong> ${orderDetails.order_time}</p>
+                        <p><strong>สถานะการชำระเงิน:</strong> ${orderDetails.payment_info}</p>
+                        <p><strong>ราคารวม:</strong> ${orderDetails.total_price}</p>
+                        <p><strong>รายการสินค้า:</strong> ${orderDetails.items}</p>
+                        <p><strong>สถานะสินค้า:</strong> ${orderDetails.status_payment}</p>`;
+                                document.getElementById("orderDetails").innerHTML = detailsHtml;
+                                document.getElementById("orderModal").style.display = "block";
+                            } else {
+                                alert("ไม่พบข้อมูลออเดอร์");
+                            }
+                        } catch (e) {
+                            console.error("Error parsing JSON:", e.message);
+                            alert("เกิดข้อผิดพลาดในการแสดงรายละเอียดออเดอร์: " + e.message);
+                        }
+                    }
+                };
+                xhr.send();
+            }
+
+
+            // ปิด Modal
+            var modal = document.getElementById("orderModal");
+            var span = document.getElementsByClassName("close")[0];
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
                 }
-            };
-            xhr.send("order_id=" + orderId + "&status=" + encodeURIComponent(status));
-        }
-    </script>
+            }
+
+            function printOrder() {
+                window.print();
+            }
+
+            function confirmDelete() {
+                const checkboxes = document.querySelectorAll('input[name="delete_order_ids[]"]:checked');
+                if (checkboxes.length === 0) {
+                    alert("กรุณาเลือกออเดอร์ที่ต้องการลบ");
+                    return;
+                }
+
+                const confirmation = confirm("คุณต้องการลบออเดอร์ที่เลือกหรือไม่?");
+                if (confirmation) {
+                    document.getElementById('deleteOrdersForm').submit(); // Submit the form
+                }
+            }
+
+            document.getElementById('selectAll').onclick = function() {
+                const checkboxes = document.querySelectorAll('input[name="delete_order_ids[]"]');
+                for (let checkbox of checkboxes) {
+                    checkbox.checked = this.checked;
+                }
+            }
+        </script>
 </body>
 
 </html>

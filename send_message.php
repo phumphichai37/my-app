@@ -13,7 +13,7 @@ $message = trim($_POST['message'] ?? '');
 $base64Image = $_POST['compressedImage'] ?? null;
 
 if (!$userId) {
-    die("Error: No user ID provided.");
+    die("Error: ไม่พบข้อมูลผู้ใช้");
 }
 
 // ดึง conversation_id
@@ -35,11 +35,11 @@ if ($row = mysqli_fetch_assoc($result)) {
 
 // ตรวจสอบว่ามีข้อความหรือรูปภาพอย่างน้อยหนึ่งอย่าง
 if (empty($message) && empty($base64Image)) {
-    die("Error: Message or image required.");
+    die("Error: ต้องมีข้อความหรือรูปภาพ");
 }
 
 if (!empty($base64Image)) {
-    $base64Image = preg_replace('#^data:image/\w+;base64,#i', '', $base64Image);
+    $base64Image = preg_replace('#^data:image/\\w+;base64,#i', '', $base64Image);
 }
 
 // เพิ่มข้อความหรือรูปภาพลงในฐานข้อมูล
@@ -48,7 +48,7 @@ $stmt = $conn->prepare($insertMessageQuery);
 $stmt->bind_param("iiss", $conversationId, $pharmacistId, $message, $base64Image);
 
 if (!$stmt->execute()) {
-    die("Error: Failed to insert message. " . $stmt->error);
+    die("Error: ไม่สามารถส่งข้อความได้ " . $stmt->error);
 }
 
-echo "Message sent successfully!";
+echo "ส่งข้อความสำเร็จ!";

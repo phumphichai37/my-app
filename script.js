@@ -1,10 +1,16 @@
 document.addEventListener('DOMContentLoaded', function () {
     fetch(`get_orders.php?timestamp=${new Date().getTime()}`)
-        .then(response => response.json())
+        .then(response => {
+            // ตรวจสอบว่าการตอบกลับเป็น JSON หรือไม่
+            if (!response.ok) {
+                return response.text().then(text => { throw new Error(text) });
+            }
+            return response.json();
+        })
         .then(orders => {
             const orderList = document.getElementById('order-list');
 
-            // Counters for different statuses
+            // ตัวนับสำหรับสถานะต่างๆ
             let pendingCount = 0;
             let preparingCount = 0;
             let shippingCount = 0;
@@ -14,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const orderCard = document.createElement('div');
                 orderCard.classList.add('order-card');
 
-                // Count orders by their status
+                // นับสถานะออเดอร์ต่างๆ
                 switch (order.status_payment) {
                     case 'รอการอนุมัติ':
                         pendingCount++;
@@ -30,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         break;
                 }
 
-                // Create dropdown for updating status
+                // สร้าง dropdown สำหรับอัปเดตสถานะ
                 const statusOptions = `
                     <select class="form-select mb-2" id="status-select-${order.order_id}">
                         <option value="รอการอนุมัติ" ${order.status_payment === 'รอการอนุมัติ' ? 'selected' : ''}>รอการอนุมัติ</option>
@@ -40,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </select>
                 `;
 
-                // Display order details and status dropdown
+                // แสดงรายละเอียดออเดอร์และ dropdown สถานะ
                 orderCard.innerHTML = `
                     <h2>Order No: ${order.order_id}</h2>
                     <div class="order-details"><strong>ราคารวมสินค้า:</strong> ${order.total_price} THB</div>
@@ -54,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 orderList.appendChild(orderCard);
             });
 
-            // Update the counters in the HTML
+            // อัปเดตตัวนับใน HTML
             document.getElementById('pending-count').innerText = `${pendingCount} ออเดอร์`;
             document.getElementById('preparing-count').innerText = `${preparingCount} ออเดอร์`;
             document.getElementById('shipping-count').innerText = `${shippingCount} ออเดอร์`;
@@ -62,8 +68,10 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(error => {
             console.error('Error fetching orders:', error);
+            alert('เกิดข้อผิดพลาดในการเรียกข้อมูล: ' + error.message);
         });
 });
+
 
 // Function for updating order status
 function updateStatus(orderId) {
@@ -90,20 +98,20 @@ function updateStatus(orderId) {
             status_payment: selectedStatus
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('สถานะอัปเดตเรียบร้อยแล้ว');
-            // Mark order as submitted in localStorage
-            submittedOrders.push(orderId);
-            localStorage.setItem('submittedOrders', JSON.stringify(submittedOrders));
-        } else {
-            alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
-        }
-        button.disabled = false; // Re-enable button after completion
-    })
-    .catch(error => {
-        console.error('Error updating status:', error);
-        button.disabled = false; // Re-enable if there is an error
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('สถานะอัปเดตเรียบร้อยแล้ว');
+                // Mark order as submitted in localStorage
+                submittedOrders.push(orderId);
+                localStorage.setItem('submittedOrders', JSON.stringify(submittedOrders));
+            } else {
+                alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
+            }
+            button.disabled = false; // Re-enable button after completion
+        })
+        .catch(error => {
+            console.error('Error updating status:', error);
+            button.disabled = false; // Re-enable if there is an error
+        });
 }

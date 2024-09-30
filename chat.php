@@ -16,6 +16,18 @@ if (!isset($_GET['user_id'])) {
 $userId = $_GET['user_id'];
 $pharmacistId = $_SESSION['pharmacist_id'];
 
+$pharmacist_data = $_SESSION['pharmacist'];
+$pharmacist_id = $pharmacist_data['pharmacist_id'];
+
+$pharmacist_id = $_SESSION['pharmacist_id'];
+$sql = "SELECT image FROM pharmacist WHERE pharmacist_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $pharmacist_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$pharmacist = $result->fetch_assoc();
+$image_path = $pharmacist['image'] ?? 'asset/default_user_icon.png';
+
 // ดึงประวัติการสนทนา
 $query = "
   SELECT m.sender_type, m.text, m.created_at, m.image 
@@ -40,154 +52,57 @@ $result = $stmt->get_result();
     <title>Chat</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-            padding-left: 220px;
-            padding-top: 56px;
-        }
-
-        .container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            margin: 20px auto;
-            max-width: 800px;
-        }
-
-        h2 {
-            color: #333;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .chat-window {
-            height: 400px;
-            overflow-y: auto;
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-
-        .message {
-            margin-bottom: 10px;
-            display: flex;
-        }
-
-        .message.user .text {
-            background-color: #e0f7fa;
-            color: #007bff;
-            margin-left: auto;
-            border-radius: 15px 15px 0 15px;
-        }
-
-        .message.pharmacist .text {
-            background-color: #f1f1f1;
-            color: #333;
-            margin-right: auto;
-            border-radius: 15px 15px 15px 0;
-        }
-
-        .message .text {
-            padding: 10px 15px;
-            max-width: 60%;
-        }
-
-        .message .timestamp {
-            font-size: 0.8rem;
-            color: #888;
-            margin-top: 5px;
-        }
-
-        .message .image {
-            margin-top: 10px;
-            max-width: 300px;
-            overflow: hidden;
-            text-align: center;
-        }
-
-        .message .image img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            display: block;
-            margin: 0 auto;
-        }
-
-        form {
-            margin-top: 20px;
-        }
-
-        .input-group {
-            border-radius: 30px;
-            overflow: hidden;
-        }
-
-        .form-control {
-            border: 1px solid #ddd;
-            border-radius: 0;
-            padding: 15px;
-        }
-
-        .btn-info {
-            border-radius: 0;
-            padding: 15px 30px;
-        }
-
-        .navbar-info {
-            background-color: #17a2b8;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            padding: 10px;
-        }
-
-        .sidebar {
-            position: fixed;
-            top: 56px;
-            left: 0;
-            width: 220px;
-            height: calc(100% - 56px);
-            background-color: rgba(23, 162, 184, 0.9);
-            border-right: 1px solid #ddd;
-            z-index: 1000;
-            overflow-y: auto;
-            padding-top: 20px;
-        }
-
-        .sidebar .btn {
-            background-color: #17a2b8;
-            border: none;
-            color: #fff;
-            margin: 10px;
-            width: calc(100% - 20px);
-        }
-
-        .sidebar .btn:hover {
-            background-color: #138496;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-        }
-
-        label[for="file-input"] {
-            cursor: pointer;
-        }
-
-        label[for="file-input"] i {
-            font-size: 1.5rem;
-            color: #007bff;
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="css/storeChat.css">
 </head>
+<style>
+    .navbar-info {
+        background-color: #17a2b8;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        padding: 10px;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 56px;
+        left: 0;
+        width: 220px;
+        height: calc(100% - 56px);
+        background-color: rgba(23, 162, 184, 0.9);
+        border-right: 1px solid #ddd;
+        z-index: 1000;
+        overflow-y: auto;
+        padding-top: 20px;
+    }
+
+    .sidebar .btn {
+        background-color: #17a2b8;
+        border: none;
+        color: #fff;
+        margin: 10px;
+        width: calc(100% - 20px);
+    }
+
+    .sidebar .btn:hover {
+        background-color: #138496;
+    }
+
+    .pharmacist-image {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin: 0 auto 20px;
+        display: block;
+        border: 3px solid #fff;
+    }
+</style>
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-info">
@@ -200,16 +115,33 @@ $result = $stmt->get_result();
     </nav>
 
     <aside class="sidebar">
-        <a href="index.php" class="btn btn-secondary">หน้าหลัก</a>
-        <a href="medicine.php" class="btn btn-secondary">ยา</a>
-        <a href="buy.php" class="btn btn-secondary">ร้านค้า</a>
-        <a href="users.php" class="btn btn-secondary">ผู้ใช้งาน</a>
-        <a href="pharmacist.php" class="btn btn-secondary">ข้อมูลส่วนตัว</a>
-        <a href="status.php" class="btn btn-secondary">สถานะ</a>
+        <img src="<?php echo htmlspecialchars($image_path); ?>" alt="Pharmacist Image" class="pharmacist-image">
+        <a href="index.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-home"></i> หน้าหลัก
+        </a>
+        <a href="medicine.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-pills"></i> ยา
+        </a>
+        <a href="buy.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-store"></i> ร้านค้า
+        </a>
+        <a href="users.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-users"></i> ผู้ใช้งาน
+        </a>
+        <a href="pharmacist.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-user"></i> ข้อมูลส่วนตัว
+        </a>
+        <a href="online.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-comment-dots"></i> แชท
+        </a>
+        <a href="status.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-truck"></i> สถานะ
+        </a>
     </aside>
 
     <div class="container">
-        <a href="online.php" class="btn btn-secondary mb-3">ย้อนกลับไปที่รายชื่อผู้ใช้</a>
+        <a href="online.php" class="btn btn-secondary mb-3">ย้อนกลับ</a>
+        <button class='btn btn-success' onclick="goToUserCart(<?php echo $userId; ?>)">สั่งซื้อ</button>
         <h2>Chat</h2>
         <div class="chat-window" id="chat-window">
             <?php while ($row = mysqli_fetch_assoc($result)) { ?>
@@ -218,7 +150,7 @@ $result = $stmt->get_result();
                         <?= htmlspecialchars($row['text']) ?>
                         <?php if ($row['image']) { ?>
                             <div class="image">
-                                <img src=" data:image/*;base64, <?= htmlspecialchars($row['image']) ?>" alt="Image">
+                                <img src="data:image/*;base64,<?= htmlspecialchars($row['image']) ?>" alt="Image" class="thumbnail" style="cursor: pointer;" onclick="openModal('data:image/*;base64,<?= htmlspecialchars($row['image']) ?>')">
                             </div>
                         <?php } ?>
                         <div class="timestamp"><?= htmlspecialchars($row['created_at']) ?></div>
@@ -238,10 +170,35 @@ $result = $stmt->get_result();
                 <input type="file" id="file-input" class="d-none" accept="image/*">
                 <button type="submit" class="btn btn-info" id="sendButton">Send</button>
             </div>
+
+            <div id="image-preview" style="display: none;" class="mt-3">
+                <img id="preview-image" src="" alt="Selected Image" style="max-width: 200px;">
+                <button type="button" class="btn btn-danger mt-2" id="remove-image">Remove Image</button>
+            </div>
         </form>
 
-        <!-- เพิ่ม JavaScript ที่ท้ายไฟล์ -->
+        <!-- โมดัลสำหรับดูรูปภาพ -->
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="imageModalLabel">ดูรูปภาพ</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <img id="modalImage" src="" alt="Full-size image" style="width: 100%;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script>
+            function openModal(imageSrc) {
+                document.getElementById('modalImage').src = imageSrc;
+                var myModal = new bootstrap.Modal(document.getElementById('imageModal'));
+                myModal.show();
+            }
+
             document.getElementById('file-input').addEventListener('change', function(event) {
                 const file = event.target.files[0];
                 if (file && file.type.startsWith('image/')) {
@@ -260,11 +217,20 @@ $result = $stmt->get_result();
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                            const compressedImage = canvas.toDataURL('image/jpeg', 0.7);
+                            const compressedImage = canvas.toDataURL('image/jpeg', 0.3);
                             document.getElementById('compressedImage').value = compressedImage;
+
+                            document.getElementById('image-preview').style.display = 'block';
+                            document.getElementById('preview-image').src = compressedImage;
                         };
                     };
                 }
+            });
+
+            document.getElementById('remove-image').addEventListener('click', function() {
+                document.getElementById('file-input').value = '';
+                document.getElementById('compressedImage').value = '';
+                document.getElementById('image-preview').style.display = 'none';
             });
 
             document.getElementById('chatForm').addEventListener('submit', function(e) {
@@ -293,6 +259,10 @@ $result = $stmt->get_result();
                     .then(result => {
                         console.log(result);
                         location.reload(); // Reload page to show new messages
+                        setTimeout(function() {
+                            const chatWindow = document.getElementById('chat-window');
+                            chatWindow.scrollTop = chatWindow.scrollHeight;
+                        }, 100);
                     })
                     .catch(error => {
                         console.error('Error:', error);
@@ -300,22 +270,24 @@ $result = $stmt->get_result();
 
                 document.getElementById('sendButton').disabled = false;
             });
-        </script>
 
-        <!-- แก้ไขส่วนการแสดงข้อความและรูปภาพ -->
-        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
-            <div class="message <?= htmlspecialchars($row['sender_type']) === 'user' ? 'user' : 'pharmacist' ?>">
-                <div class="text">
-                    <?= htmlspecialchars($row['text']) ?>
-                    <?php if (!empty($row['image'])) { ?>
-                        <div class="image">
-                            <img src="<?= htmlspecialchars($row['image']) ?>" alt="Uploaded Image" onerror="this.style.display='none'">
-                        </div>
-                    <?php } ?>
-                    <div class="timestamp"><?= htmlspecialchars($row['created_at']) ?></div>
-                </div>
-            </div>
-        <?php } ?>
+            window.onload = function() {
+                const chatWindow = document.getElementById('chat-window');
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            };
+
+            function goToUserCart(userId) {
+                // ตรวจสอบว่าค่า userId ถูกต้องหรือไม่
+                if (!userId) {
+                    alert("User ID is missing.");
+                    return;
+                }
+
+                // เปลี่ยนหน้าไปยัง userCart.php พร้อมกับส่ง user_id ผ่าน URL
+                window.location.href = 'userCart.php?user_id=' + userId;
+            }
+        </script>
+    </div>
 </body>
 
 </html>

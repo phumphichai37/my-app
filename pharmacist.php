@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_email = trim($_POST['email']);
     $new_licen_number = trim($_POST['licen_number']);
     $new_specialization = trim($_POST['specialization']);
-    
+
     // Handle image upload
     $upload_dir = 'uploads/profile_pics/';
     $image_path = '';
@@ -103,11 +103,15 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pharmacist Profile</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
         body {
             background: #f8f9fa;
@@ -168,24 +172,39 @@ $conn->close();
         }
     </style>
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-info">
         <div class="container-fluid">
             <h5 class="text-white">TAKECARE</h5>
             <div>
-                <a href="users.php" class="btn btn-light me-2">ย้อนกลับ</a>
                 <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
             </div>
         </div>
     </nav>
 
     <aside class="sidebar">
-        <a href="index.php" class="btn btn-secondary me-2">หน้าหลัก</a>
-        <a href="medicine.php" class="btn btn-secondary me-2">ยา</a>
-        <a href="buy.php" class="btn btn-secondary me-2">ร้านค้า</a>
-        <a href="users.php" class="btn btn-secondary me-2">ผู้ใช้งาน</a>
-        <a href="status.php" class="btn btn-secondary me-2">สถานะสินค้า</a>
-        <a href="online.php" class="btn btn-secondary me-2">แชท</a>
+        <a href="index.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-home"></i> หน้าหลัก
+        </a>
+        <a href="medicine.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-pills"></i> ยา
+        </a>
+        <a href="buy.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-store"></i> ร้านค้า
+        </a>
+        <a href="users.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-users"></i> ผู้ใช้งาน
+        </a>
+        <a href="pharmacist.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-user"></i> ข้อมูลส่วนตัว
+        </a>
+        <a href="online.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-comment-dots"></i> แชท
+        </a>
+        <a href="status.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-truck"></i> สถานะ
+        </a>
     </aside>
 
     <div class="container">
@@ -207,16 +226,16 @@ $conn->close();
                         <form method="post" action="" enctype="multipart/form-data">
                             <strong>Pharmacist Name:</strong><br />
                             <input type="text" name="pharmacist_name" class="form-control" value="<?php echo htmlspecialchars($pharmacist['pharmacist_name'] ?? ''); ?>"><br />
-                            
+
                             <strong>Email:</strong><br />
                             <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($pharmacist['email'] ?? ''); ?>"><br />
-                            
+
                             <strong>License Number:</strong><br />
                             <input type="text" name="licen_number" class="form-control" value="<?php echo htmlspecialchars($pharmacist['licen_number'] ?? ''); ?>"><br />
-                            
+
                             <strong>Specialization:</strong><br />
                             <textarea name="specialization" class="form-control" rows="3"><?php echo htmlspecialchars($pharmacist['specialization'] ?? ''); ?></textarea><br />
-                            
+
                             <strong>Profile Picture:</strong><br />
                             <input type="file" name="profile_picture" class="form-control"><br />
 
@@ -229,4 +248,5 @@ $conn->close();
         </div>
     </div>
 </body>
+
 </html>

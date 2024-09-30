@@ -6,6 +6,13 @@ if (isset($_SESSION["pharmacist"])) {
     exit();
 }
 
+$images = [
+    'asset/band.png',
+    'asset/qrcode.jpg',
+    'asset/default_user_icon.png',
+    // เพิ่มรูปภาพตามต้องการ
+];
+
 require_once "connectdb.php"; // เชื่อมต่อฐานข้อมูล
 
 if (isset($_POST["login"])) {
@@ -38,49 +45,160 @@ if (isset($_POST["login"])) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
+        .body {
+            background-color: #fffcf9;
+        }
+
         .container {
             max-width: 400px;
-            margin-top: 50px;
+            margin-top: 5%;
             padding: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background: #fffcf9;
+            border-radius: 20px;
+            box-shadow: 0 0 10px #fff1e3;
+            margin-right: 10%;
         }
+
         .form-group {
             margin-bottom: 15px;
         }
+
         .form-control {
             width: 100%;
         }
+
         .btn {
             width: 100%;
             margin-top: 10px;
         }
+
         .logo {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .logo img {
             max-width: 150px;
         }
+
         .navbar-info {
             background-color: #17a2b8;
         }
+
+        .btn-login {
+            width: 100%;
+            background-color: #17a2b8;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .btn-login:hover {
+            background-color: #138496;
+        }
+
+        .manual-button {
+            display: inline-flex;
+            align-items: center;
+            background-color: #fff1e3;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            display: flex;
+            justify-content: center;
+        }
+
+        .manual-button:hover {
+            background-color: #ffe6cc;
+        }
+
+        .manual-button a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .icon-container {
+            margin-left: 10px;
+        }
+
+        .icon-container i {
+            font-size: 20px;
+            color: #17a2b8;
+        }
+
+        .image-slider {
+            position: fixed;
+            width: 40%;
+            height: 80vh;
+            overflow: hidden;
+            float: left;
+            margin-top: 3.5%;  
+            margin-left: 10%;
+            border: 3px solid transparent;
+            background-image: linear-gradient(white, white),
+                linear-gradient(to right, #17a2b8, #20c997);
+            background-origin: border-box;
+            background-clip: content-box, border-box;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        .container {
+            float: right;
+            width: 35%;
+            margin-right: 10%;
+            margin-top: 10vh;
+        }
     </style>
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-info">
         <div class="container-fluid">
             <h5 class="text-white">TAKECARE</h5>
         </div>
     </nav>
-    
+
+    <div class="image-slider">
+        <?php foreach ($images as $index => $image): ?>
+            <div class="slide <?php echo $index === 0 ? 'active' : ''; ?>">
+                <img src="<?php echo $image; ?>" alt="Slide <?php echo $index + 1; ?>">
+            </div>
+        <?php endforeach; ?>
+    </div>
+
     <div class="container">
         <div class="logo">
             <img src="asset/band.png" alt="Logo">
@@ -93,9 +211,43 @@ if (isset($_POST["login"])) {
                 <input type="password" placeholder="Enter Password" name="password" class="form-control" required>
             </div>
             <div class="form-group">
-                <input type="submit" value="Login" name="login" class="btn btn-primary">
+                <input type="submit" value="Login" name="login" class="btn btn-login">
             </div>
         </form>
+        <div class="manual-button">
+            <a href="#" onclick="downloadPDF()">คู่มือการใช้งาน</a>
+            <div class="icon-container">
+                <i class="fas fa-cloud-download-alt" style="color: #17a2b8;" onclick="downloadPDF()"></i>
+            </div>
+        </div>
     </div>
+
+    <script>
+        function downloadPDF() {
+            const pdfUrl = "asset/document.pdf";
+            const link = document.createElement('a');
+            link.href = pdfUrl;
+            link.download = "คู่มือการใช้งาน.pdf";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        const slides = document.querySelectorAll('.slide');
+        let currentSlide = 0;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + slides.length) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        setInterval(nextSlide, 5000);
+    </script>
 </body>
+
 </html>
