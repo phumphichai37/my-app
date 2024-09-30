@@ -32,6 +32,25 @@ $userQuery = "SELECT COUNT(user_id) AS user_count FROM users";
 $userResult = getQueryResult($conn, $userQuery);
 $userCount = $userResult->fetch_assoc()['user_count'];
 
+// คำนวณยาที่ถูกซื้อบ่อยที่สุด
+$mostMedicineQuery = "
+    SELECT m.medicine_name, SUM(od.quantity) AS total_quantity
+    FROM order_details od
+    JOIN medicine m ON od.medicine_id = m.medicine_id
+    GROUP BY m.medicine_name
+    ORDER BY total_quantity DESC
+    LIMIT 1";
+
+$mostMedicineResult = getQueryResult($conn, $mostMedicineQuery);
+
+if ($mostMedicineResult && $mostMedicineResult->num_rows > 0) {
+    $mostMedicineRow = $mostMedicineResult->fetch_assoc();
+    $mostMedicineName = $mostMedicineRow['medicine_name'];
+    $mostMedicineQuantity = $mostMedicineRow['total_quantity'];
+} else {
+    $mostMedicineName = "ไม่มีข้อมูล";
+    $mostMedicineQuantity = 0;
+}
 // คำนวณรายเดือน
 $revenueQuery = "SELECT SUM(total_price) AS monthly_total 
                  FROM orders 
@@ -77,6 +96,7 @@ $year = $date->format('Y');
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="css/keyframes.css">
     <style>
         body {
             margin: 0;
@@ -158,15 +178,31 @@ $year = $date->format('Y');
             }
         }
 
-        .user-count-box {
+        .box-container {
+            display: flex;
+            justify-content: stretch;
+            gap: 20px;
+            margin-left: 30px;
+            /* ระยะห่างระหว่างกล่อง */
+        }
+
+        .user-count-box,
+        .most-pills-box {
             border: 2px solid #17a2b8;
             padding: 20px;
-            margin-bottom: 20px;
             background-color: #f8f9fa;
             border-radius: 8px;
             max-width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
+        }
+
+        .user-count-box {
+            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+
+        .most-pills-box {
+            margin-bottom: 20px;
+            margin-top: 20px;
         }
 
         .chart-box {
@@ -176,21 +212,80 @@ $year = $date->format('Y');
             border-radius: 8px;
             margin-bottom: 20px;
         }
+
+        .table {
+            border-collapse: collapse;
+            /* รวมขอบให้ดูเรียบร้อย */
+            width: 100%;
+            /* ให้ตารางมีความกว้างเต็มที่ */
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #dee2e6;
+            /* กำหนดขอบของเซลล์ */
+            padding: 8px;
+            /* ระยะห่างภายในเซลล์ */
+            text-align: left;
+            /* จัดตำแหน่งข้อความ */
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            /* สีพื้นหลังของหัวตาราง */
+        }
     </style>
 </head>
 
 <body>
-    <?php
-    include('css/navSide.php');
-    ?>
+    <nav class="navbar navbar-expand-lg navbar-info">
+        <div class="container-fluid">
+            <h5 class="text-white">TAKECARE</h5>
+            <div>
+                <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
+            </div>
+        </div>
+    </nav>
+
+    <aside class="sidebar">
+        <i class="fa-solid fa-home pharmacist-image"></i>
+        <a href="medicine.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-pills"></i> ยา
+        </a>
+        <a href="buy.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-store"></i> ร้านค้า
+        </a>
+        <a href="users.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-users"></i> ผู้ใช้งาน
+        </a>
+        <a href="pharmacist.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-user"></i> ข้อมูลส่วนตัว
+        </a>
+        <a href="online.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-comment-dots"></i> แชท
+        </a>
+        <a href="status.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-truck"></i> สถานะ
+        </a>
+    </aside>
 
     <main>
-        <div class="user-count-box">
-            <div style="display: flex; justify-content: center;">
-                <i class="fa-solid fa-users" style="color: #17a2b8; font-size: 56px; margin-bottom: 15px;"></i>
+        <div class="box-container">
+            <div class="user-count-box">
+                <div style="display: flex; justify-content: center;">
+                    <i class="fa-solid fa-users" style="color: #17a2b8; font-size: 56px; margin-bottom: 15px;"></i>
+                </div>
+                <p>ยอดผู้ใช้งาน: <?php echo $userCount; ?> คน</p>
             </div>
-            <p>ยอดผู้ใช้งาน: <?php echo $userCount; ?> คน</p>
+
+            <div class="most-pills-box">
+                <div style="display: flex; justify-content: center;">
+                    <i class="fa-solid fa-pills" style="color: #17a2b8; font-size: 56px; margin-bottom: 15px;"></i>
+                </div>
+                <p>ยาที่ถูกซื้อบ่อยที่สุด: <?php echo $mostMedicineName; ?> จำนวน <?php echo $mostMedicineQuantity; ?> ชิ้น</p>
+            </div>
         </div>
+
 
         <div class="chart-container">
             <div class="chart-wrapper">
@@ -200,6 +295,7 @@ $year = $date->format('Y');
                     <input type="month" id="monthSelector" class="form-control" value="<?php echo $selectedMonth; ?>">
                     <p id="monthlyTotal">รายได้รวมของเดือน <?php echo $monthName . ' ' . $year; ?> : <?php echo number_format($monthlyTotal, 2); ?> บาท</p>
                     <canvas id="dailyChart"></canvas>
+                    <button onclick="downloadDailyCSV()">Daily</button>
                 </div>
             </div>
 
@@ -210,35 +306,61 @@ $year = $date->format('Y');
                     <input type="number" id="yearSelector" class="form-control" value="<?php echo $selectedYear; ?>" min="2000" max="<?php echo date('Y'); ?>">
                     <p id="yearlyTotal">รายได้รวมของปี <?php echo $selectedYear; ?> : <?php echo number_format($yearstotal, 2); ?> บาท</p>
                     <canvas id="monthlyChart"></canvas>
+                    <button onclick="downloadMonthlyCSV()">Monthly</button>
                 </div>
             </div>
         </div>
 
         <div class="container">
-            <h2>สรุปรายได้รวมของแต่ละเดือน</h2>
-            <button onclick="downloadDailyCSV()">Daily</button>
-            <button onclick="downloadMonthlyCSV()">Monthly</button>
+            <h2>สรุปรายรับของร้าน</h2>
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>เดือน</th>
-                        <th>ยอดรวม (บาท)</th>
+                        <th>ผู้ใช้ (ID)</th>
+                        <th>ชื่อผู้ใช้</th>
+                        <th>เวลาที่สั่งซื้อ</th>
+                        <th>รายการสินค้า</th>
+                        <th>ยอดคำสั่งซื้อ (บาท)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while ($row = $monthlyResult->fetch_assoc()):
-                        $date = DateTime::createFromFormat('Y-m', $row['order_month']);
-                        $monthName = $date->format('F');
-                        $year = $date->format('Y');
+                    <?php
+                    $orderQuery = "
+            SELECT u.user_id, 
+                   COALESCE(u.full_name, 'ไม่มี') AS full_name, 
+                   o.order_time, 
+                   o.total_price,
+                   GROUP_CONCAT(CONCAT(od.quantity, 'x ', m.medicine_name) SEPARATOR ', ') AS items
+            FROM orders o
+            LEFT JOIN users u ON o.user_id = u.user_id
+            JOIN order_details od ON o.order_id = od.order_id
+            JOIN medicine m ON od.medicine_id = m.medicine_id
+            WHERE DATE_FORMAT(o.order_time, '%Y') = ?
+            GROUP BY o.order_id
+            ORDER BY o.order_time ASC";
+
+                    $orderResult = getQueryResult($conn, $orderQuery, [$selectedYear], "s");
+
+                    while ($row = $orderResult->fetch_assoc()):
+                        $userId = $row['user_id'] ?? 'ไม่มี';
+                        $userName = $row['full_name'];
+                        $orderTime = DateTime::createFromFormat('Y-m-d H:i:s', $row['order_time'])->format('d M Y H:i');
+                        $totalPrice = $row['total_price'];
+                        $items = $row['items'];
                     ?>
                         <tr>
-                            <td><?php echo $monthName . ' ' . $year; ?></td>
-                            <td><?php echo number_format($row['monthly_total'], 2); ?></td>
+                            <td><?php echo $userId; ?></td>
+                            <td><?php echo $userName; ?></td>
+                            <td><?php echo $orderTime; ?></td>
+                            <td><?php echo $items; ?></td>
+                            <td><?php echo number_format($totalPrice, 2); ?> บาท</td>
                         </tr>
                     <?php endwhile; ?>
                 </tbody>
             </table>
         </div>
+
+
     </main>
 
     <script>

@@ -169,6 +169,8 @@ if (isset($_POST['remove_selected'])) {
         $message = "กรุณาเลือกรายการที่ต้องการลบ";
     }
 }
+
+
 ?>
 
 <!DOCTYPE html>
@@ -182,64 +184,12 @@ if (isset($_POST['remove_selected'])) {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="css/keyframes.css">
     <style>
         body {
             background: #f8f9fa;
             margin: 0;
             padding: 0;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-        }
-
-        .navbar-info {
-            background-color: #17a2b8;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            padding: 10px;
-        }
-
-        .sidebar {
-            position: fixed;
-            top: 56px;
-            left: 0;
-            width: 220px;
-            height: calc(100% - 56px);
-            background-color: rgba(23, 162, 184, 0.9);
-            border-right: 1px solid #ddd;
-            z-index: 1000;
-            overflow-y: auto;
-            padding-top: 20px;
-        }
-
-        .sidebar .btn {
-            background-color: #17a2b8;
-            border: none;
-            color: #fff;
-            margin: 10px;
-            width: calc(100% - 20px);
-        }
-
-        .sidebar .btn:hover {
-            background-color: #138496;
-        }
-
-        .pharmacist-image {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 0 auto 20px;
-            display: block;
-            border: 3px solid #fff;
         }
 
         .container {
@@ -298,7 +248,7 @@ if (isset($_POST['remove_selected'])) {
     </nav>
 
     <aside class="sidebar">
-        <img src="<?php echo htmlspecialchars($image_path); ?>" alt="Pharmacist Image" class="pharmacist-image">
+        <i class="fa-solid fa-store pharmacist-image"></i>
         <a href="index.php" class="btn btn-secondary me-2">
             <i class="fa-solid fa-home"></i> หน้าหลัก
         </a>
@@ -431,12 +381,10 @@ if (isset($_POST['remove_selected'])) {
                     }
 
                     $image = $row["image"];
-                    if (preg_match('/^data:image\/(\w+);base64,/', $image)) {
-                        echo '<img src="' . htmlspecialchars($image) . '" alt="ภาพยา">';
-                    } elseif (filter_var($image, FILTER_VALIDATE_URL)) {
+                    if (filter_var($image, FILTER_VALIDATE_URL)) {
                         echo '<img src="' . htmlspecialchars($image) . '" alt="ภาพยา">';
                     } else {
-                        echo '<img src="path/to/placeholder.jpg" alt="รูปภาพไม่ถูกต้อง">';
+                        echo '<img src="data:image/*;base64,' . htmlspecialchars($image) . '" alt="ภาพยา">';
                     }
 
                     echo '<form method="POST" action="" class="mt-2">';

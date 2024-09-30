@@ -93,14 +93,24 @@ $result = $stmt->get_result();
         background-color: #138496;
     }
 
+    @keyframes flipY {
+        0% {
+            transform: rotateY(0deg);
+        }
+
+        100% {
+            transform: rotateY(360deg);
+        }
+    }
+
     .pharmacist-image {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        object-fit: cover;
-        margin: 0 auto 20px;
+        font-size: 100px;
+        color: #fff;
         display: block;
-        border: 3px solid #fff;
+        margin: 0 auto 20px;
+        text-align: center;
+        animation: flipY 3s infinite;
+        /* หมุน 5 วินาที และสั่นทุกๆ 0.5 วินาที */
     }
 </style>
 
@@ -115,7 +125,7 @@ $result = $stmt->get_result();
     </nav>
 
     <aside class="sidebar">
-        <img src="<?php echo htmlspecialchars($image_path); ?>" alt="Pharmacist Image" class="pharmacist-image">
+        <i class="fa-solid fa-comment-dots pharmacist-image"></i>
         <a href="index.php" class="btn btn-secondary me-2">
             <i class="fa-solid fa-home"></i> หน้าหลัก
         </a>

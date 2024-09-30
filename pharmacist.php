@@ -170,6 +170,16 @@ $conn->close();
         .sidebar .btn:hover {
             background-color: #138496;
         }
+
+        .pharmacist-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 20px;
+            display: block;
+            border: 3px solid #fff;
+        }
     </style>
 </head>
 
@@ -184,6 +194,7 @@ $conn->close();
     </nav>
 
     <aside class="sidebar">
+        <img src="<?php echo htmlspecialchars($pharmacist['image']); ?>" alt="Pharmacist Image" class="pharmacist-image">
         <a href="index.php" class="btn btn-secondary me-2">
             <i class="fa-solid fa-home"></i> หน้าหลัก
         </a>

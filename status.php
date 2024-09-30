@@ -158,6 +158,10 @@ $orderCounts = getOrderCounts(); // ดึงข้อมูลการนั�
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <title>Order Tracking</title>
     <style>
         body {
@@ -212,14 +216,24 @@ $orderCounts = getOrderCounts(); // ดึงข้อมูลการนั�
             background-color: #138496;
         }
 
+        @keyframes flipY {
+            0% {
+                transform: rotateY(0deg);
+            }
+
+            100% {
+                transform: rotateY(360deg);
+            }
+        }
+
         .pharmacist-image {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 0 auto 20px;
+            font-size: 100px;
+            color: #fff;
             display: block;
-            border: 3px solid #fff;
+            margin: 0 auto 20px;
+            text-align: center;
+            animation: flipY 3s infinite;
+            /* หมุน 5 วินาที และสั่นทุกๆ 0.5 วินาที */
         }
 
         .status-card {
@@ -314,7 +328,39 @@ $orderCounts = getOrderCounts(); // ดึงข้อมูลการนั�
 </head>
 
 <body>
-    <?php include('css/navSIde.php'); ?>
+    <nav class="navbar navbar-expand-lg navbar-info">
+        <div class="container-fluid">
+            <h5 class="text-white">TAKECARE</h5>
+            <div>
+                <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
+            </div>
+        </div>
+    </nav>
+
+    <aside class="sidebar">
+        <i class="fa-solid fa-truck pharmacist-image"></i>
+        <a href="index.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-home"></i> หน้าหลัก
+        </a>
+        <a href="medicine.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-pills"></i> ยา
+        </a>
+        <a href="buy.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-store"></i> ร้านค้า
+        </a>
+        <a href="users.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-users"></i> ผู้ใช้งาน
+        </a>
+        <a href="pharmacist.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-user"></i> ข้อมูลส่วนตัว
+        </a>
+        <a href="online.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-comment-dots"></i> แชท
+        </a>
+        <a href="status.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-truck"></i> สถานะ
+        </a>
+    </aside>
 
     <div class="container mt-4">
         <h2 class="mb-4">ติดตามรายการสินค้า</h2>

@@ -76,6 +76,11 @@ $stmt->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="css/keyframes.css">
     <style>
         body {
             background: #f8f9fa;
@@ -130,13 +135,50 @@ $stmt->close();
             color: #666;
             font-size: 1.2em;
             text-align: center;
-            margin-left: 10%;
+            border: 5px solid #666;
+            /* เพิ่มกรอบสีเทาเข้ม */
+            border-radius: 8px;
+            /* เพิ่มความโค้งให้กับมุม */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            /* เพิ่มเงา */
         }
     </style>
 </head>
 
 <body>
-    <?php include('css/navSIde.php');?>
+    <nav class="navbar navbar-expand-lg navbar-info">
+        <div class="container-fluid">
+            <h5 class="text-white">TAKECARE</h5>
+            <div>
+                <a href="logout.php" class="btn btn-light">ออกจากระบบ</a>
+            </div>
+        </div>
+    </nav>
+
+    <aside class="sidebar">
+        <i class="fa-solid fa-edit pharmacist-image"></i>
+        <a href="index.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-home"></i> หน้าหลัก
+        </a>
+        <a href="medicine.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-pills"></i> ยา
+        </a>
+        <a href="buy.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-store"></i> ร้านค้า
+        </a>
+        <a href="users.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-users"></i> ผู้ใช้งาน
+        </a>
+        <a href="pharmacist.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-user"></i> ข้อมูลส่วนตัว
+        </a>
+        <a href="online.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-comment-dots"></i> แชท
+        </a>
+        <a href="status.php" class="btn btn-secondary me-2">
+            <i class="fa-solid fa-truck"></i> สถานะ
+        </a>
+    </aside>
 
     <div class="container">
         <?php

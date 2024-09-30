@@ -1,17 +1,39 @@
 <?php
+ // เริ่มใช้งาน session
 require_once 'connectdb.php';
 
-$pharmacist_data = $_SESSION['pharmacist'];
-$pharmacist_id = $pharmacist_data['pharmacist_id'];
+// ตรวจสอบว่ามีการเข้าสู่ระบบของเภสัชกรหรือไม่
+if (isset($_SESSION['pharmacist'])) {
+    $pharmacist_data = $_SESSION['pharmacist'];
+    $pharmacist_id = $pharmacist_data['pharmacist_id'];
+} else {
+    // หากไม่พบข้อมูลเภสัชกร ให้ออกจากระบบหรือแสดงข้อผิดพลาด
+    header("Location: logout.php");
+    exit;
+}
 
-$pharmacist_id = $_SESSION['pharmacist_id'];
+// ดึงข้อมูลรูปภาพเภสัชกรจากฐานข้อมูล
 $sql = "SELECT image FROM pharmacist WHERE pharmacist_id = ?";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $pharmacist_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$pharmacist = $result->fetch_assoc();
-$image_path = $pharmacist['image'] ?? 'asset/default_user_icon.png';
+if ($stmt) {
+    $stmt->bind_param("i", $pharmacist_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result && $pharmacist = $result->fetch_assoc()) {
+        // ถ้าพบรูปภาพในฐานข้อมูล
+        $image_path = $pharmacist['image'] ? htmlspecialchars($pharmacist['image']) : 'asset/default_user_icon.png';
+    } else {
+        // กรณีไม่พบเภสัชกรหรือไม่มีข้อมูลรูปภาพ
+        $image_path = 'asset/default_user_icon.png';
+    }
+
+    $stmt->close();
+} else {
+    // กรณีเกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL
+    $image_path = 'asset/default_user_icon.png';
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -23,7 +45,7 @@ $image_path = $pharmacist['image'] ?? 'asset/default_user_icon.png';
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-    <title>Document</title>
+    <title>Pharmacist Dashboard</title>
     <style>
         .navbar-info {
             background-color: #17a2b8;
@@ -83,7 +105,7 @@ $image_path = $pharmacist['image'] ?? 'asset/default_user_icon.png';
     </nav>
 
     <aside class="sidebar">
-        <img src="<?php echo htmlspecialchars($image_path); ?>" alt="Pharmacist Image" class="pharmacist-image">
+        <img src="<?php echo $image_path; ?>" alt="Pharmacist Image" class="pharmacist-image">
         <a href="index.php" class="btn btn-secondary me-2">
             <i class="fa-solid fa-home"></i> หน้าหลัก
         </a>
@@ -106,8 +128,6 @@ $image_path = $pharmacist['image'] ?? 'asset/default_user_icon.png';
             <i class="fa-solid fa-truck"></i> สถานะ
         </a>
     </aside>
-
-
 </body>
 
 </html>

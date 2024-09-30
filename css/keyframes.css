@@ -1,0 +1,62 @@
+.container {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+.navbar-info {
+    background-color: #17a2b8;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    padding: 10px;
+}
+
+.sidebar {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    width: 220px;
+    height: calc(100% - 56px);
+    background-color: rgba(23, 162, 184, 0.9);
+    border-right: 1px solid #ddd;
+    z-index: 1000;
+    overflow-y: auto;
+    padding-top: 20px;
+}
+
+.sidebar .btn {
+    background-color: #17a2b8;
+    border: none;
+    color: #fff;
+    margin: 10px;
+    width: calc(100% - 20px);
+}
+
+.sidebar .btn:hover {
+    background-color: #138496;
+}
+
+@keyframes flipY {
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    100% {
+        transform: rotateY(360deg);
+    }
+}
+
+.pharmacist-image {
+    font-size: 100px;
+    color: #fff;
+    display: block;
+    margin: 0 auto 20px;
+    text-align: center;
+    animation: flipY 3s infinite;
+    /* หมุน 5 วินาที และสั่นทุกๆ 0.5 วินาที */
+}

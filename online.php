@@ -40,6 +40,7 @@ if (!$result) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User List</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
@@ -57,51 +58,6 @@ if (!$result) {
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar-info {
-            background-color: #17a2b8;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            padding: 10px;
-        }
-
-        .sidebar {
-            position: fixed;
-            top: 56px;
-            left: 0;
-            width: 220px;
-            height: calc(100% - 56px);
-            background-color: rgba(23, 162, 184, 0.9);
-            border-right: 1px solid #ddd;
-            z-index: 1000;
-            overflow-y: auto;
-            padding-top: 20px;
-        }
-
-        .sidebar .btn {
-            background-color: #17a2b8;
-            border: none;
-            color: #fff;
-            margin: 10px;
-            width: calc(100% - 20px);
-        }
-
-        .sidebar .btn:hover {
-            background-color: #138496;
-        }
-
-        .pharmacist-image {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 0 auto 20px;
-            display: block;
-            border: 3px solid #fff;
         }
 
         h2 {
@@ -157,6 +113,61 @@ if (!$result) {
             margin-left: auto;
             margin-right: 15px;
         }
+
+        .navbar-info {
+            background-color: #17a2b8;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 10px;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 220px;
+            height: calc(100% - 56px);
+            background-color: rgba(23, 162, 184, 0.9);
+            border-right: 1px solid #ddd;
+            z-index: 1000;
+            overflow-y: auto;
+            padding-top: 20px;
+        }
+
+        .sidebar .btn {
+            background-color: #17a2b8;
+            border: none;
+            color: #fff;
+            margin: 10px;
+            width: calc(100% - 20px);
+        }
+
+        .sidebar .btn:hover {
+            background-color: #138496;
+        }
+
+        @keyframes flipY {
+            0% {
+                transform: rotateY(0deg);
+            }
+
+            100% {
+                transform: rotateY(360deg);
+            }
+        }
+
+        .pharmacist-image {
+            font-size: 100px;
+            color: #fff;
+            display: block;
+            margin: 0 auto 20px;
+            text-align: center;
+            animation: flipY 3s infinite;
+            /* หมุน 5 วินาที และสั่นทุกๆ 0.5 วินาที */
+        }
     </style>
 </head>
 
@@ -171,7 +182,7 @@ if (!$result) {
     </nav>
 
     <aside class="sidebar">
-        <img src="<?php echo htmlspecialchars($image_path); ?>" alt="Pharmacist Image" class="pharmacist-image">
+        <i class="fa-solid fa-comment-dots pharmacist-image"></i>
         <a href="index.php" class="btn btn-secondary me-2">
             <i class="fa-solid fa-home"></i> หน้าหลัก
         </a>
