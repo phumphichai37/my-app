@@ -431,12 +431,10 @@ if (isset($_POST['remove_selected'])) {
                     }
 
                     $image = $row["image"];
-                    if (preg_match('/^data:image\/(\w+);base64,/', $image)) {
-                        echo '<img src="' . htmlspecialchars($image) . '" alt="ภาพยา">';
-                    } elseif (filter_var($image, FILTER_VALIDATE_URL)) {
+                    if (filter_var($image, FILTER_VALIDATE_URL)) {
                         echo '<img src="' . htmlspecialchars($image) . '" alt="ภาพยา">';
                     } else {
-                        echo '<img src="path/to/placeholder.jpg" alt="รูปภาพไม่ถูกต้อง">';
+                        echo '<img src="data:image/*;base64,' . htmlspecialchars($image) . '" alt="ภาพยา">';
                     }
 
                     echo '<form method="POST" action="" class="mt-2">';

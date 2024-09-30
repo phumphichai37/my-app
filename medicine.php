@@ -28,8 +28,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (strpos($fileType, 'image/') === 0) {
                 // อ่านข้อมูลรูปภาพ
                 $imgData = file_get_contents($_FILES['file']['tmp_name']);
-
-                $image = base64_encode($imgData);
+                
+                // สร้างภาพจากข้อมูล
+                $imageResource = imagecreatefromstring($imgData);
+                
+                // ตั้งค่าขนาดภาพใหม่ (ลดขนาด)
+                $newWidth = 800;  // ความกว้างใหม่
+                $newHeight = 600; // ความสูงใหม่
+                $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+                
+                // ปรับขนาดภาพ
+                imagecopyresampled($resizedImage, $imageResource, 0, 0, 0, 0, $newWidth, $newHeight, imagesx($imageResource), imagesy($imageResource));
+                
+                // บันทึกภาพในรูปแบบ JPEG และลดคุณภาพ (0-100)
+                ob_start(); // เริ่มการบันทึกข้อมูลเอาต์พุต
+                imagejpeg($resizedImage, null, 75); // ลดคุณภาพที่ 75%
+                $compressedData = ob_get_contents(); // รับข้อมูลที่บันทึก
+                ob_end_clean(); // ล้างข้อมูลที่บันทึก
+                
+                // แปลงข้อมูลเป็น Base64
+                $image = base64_encode($compressedData);
+                
+                // ปิดการใช้งานทรัพยากร
+                imagedestroy($imageResource);
+                imagedestroy($resizedImage);
 
                 // เพิ่มข้อมูลลงในฐานข้อมูล
                 $sql = "INSERT INTO medicine (medicine_name, description, type, price, stock, image) VALUES (?, ?, ?, ?, ?, ?)";
@@ -76,6 +98,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $message = "กรุณากรอกข้อมูลให้ครบถ้วน";
     }
 }
+
 
 if (isset($_GET['delete'])) {
     $id = intval($_GET['delete']);
