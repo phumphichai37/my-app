@@ -230,7 +230,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
                     <th scope="col">เบอร์โทรศัพท์</th>
                     <th scope="col">อีเมล</th>
                     <th scope="col">แก้ไข</th>
-                    <th scope="col">ลบ</th>
                 </tr>
             </thead>
             <tbody>
@@ -248,12 +247,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_user_id'])) {
                             <td class='email'>{$row['email']}</td>
                             <td class='table-buttons'>
                                 <a href='usermanage.php?user_id={$row['user_id']}' class='btn btn-success'>แก้ไข</a>
-                            </td>
-                            <td class='table-buttons'>
-                                <form method='POST' onsubmit='return confirm(\"Are you sure you want to delete this user?\");'>
-                                    <input type='hidden' name='delete_user_id' value='{$row['user_id']}'>
-                                    <button type='submit' class='btn btn-danger'>ลบ</button>
-                                </form>
                             </td>
                         </tr>";
                     }

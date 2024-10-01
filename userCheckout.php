@@ -7,7 +7,7 @@ if (!isset($_SESSION['pharmacist'])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $user_id = isset($_POST['user_id']) ? (int)$_POST['user_id'] : null;
+    $user_id = isset($_POST['user_id']) ? (int) $_POST['user_id'] : null;
     // ทำการจัดการอื่น ๆ ตามที่ต้องการ
 }
 
@@ -72,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 $user_id = $_SESSION['user_id']; // หรือค่าที่ได้จาก session หรือฐานข้อมูล
                 $status_payment = $_POST['status_payment'];
-                $total_price = (float)$_POST['total_price'];
+                $total_price = (float) $_POST['total_price'];
                 $payment_info = $_POST['payment_info'];
                 $status_noti = $_POST['status_noti'];
                 $t_id = $_POST['t_id'];
@@ -99,7 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     } else if (isset($_POST['user_id'])) {
         // Fetch user full name when user_id is provided
-        $user_id = (int)$_POST['user_id'];
+        $user_id = (int) $_POST['user_id'];
         $stmt = $conn->prepare("SELECT full_name FROM users WHERE user_id = ?");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
@@ -154,7 +154,7 @@ $conn->close();
                         foreach ($_SESSION['cart'] as $item):
                             $itemTotal = $item['price'] * $item['quantity'];
                             $totalAmount += $itemTotal;
-                        ?>
+                            ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($item['medicine_name']); ?></td>
                                 <td>฿<?php echo number_format($item['price'], 2); ?></td>
@@ -168,16 +168,18 @@ $conn->close();
                         </tr>
                     </tbody>
                 </table>
-                <form method="POST" action="">
+                <form method="POST" action="" id="checkout-form">
                     <div class="mb-3">
                         <label for="user_id" class="form-label">User ID</label>
-                        <input type="number" class="form-control" id="user_id" name="user_id" required value="<?php echo isset($user_id) ? $user_id : ''; ?>">
+                        <input type="number" class="form-control" id="user_id" name="user_id" required
+                            value="<?php echo isset($user_id) ? $user_id : ''; ?>">
                     </div>
 
                     <?php if (!empty($user_full_name)): ?>
                         <div class="mb-3">
                             <label for="full_name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="full_name" value="<?php echo htmlspecialchars($user_full_name); ?>" readonly>
+                            <input type="text" class="form-control" id="full_name"
+                                value="<?php echo htmlspecialchars($user_full_name); ?>" readonly>
                         </div>
                     <?php endif; ?>
 
@@ -185,12 +187,13 @@ $conn->close();
                         <label class="form-label">วิธีการชำระเงิน</label>
                         <div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="payment_info" id="payment_cash" value="เก็บเงินปลายทาง"
-                                    <?php echo isset($_POST['payment_info']) && $_POST['payment_info'] === 'เก็บเงินปลายทาง' ? 'checked' : ''; ?>>
+                                <input class="form-check-input" type="radio" name="payment_info" id="payment_cash"
+                                    value="เก็บเงินปลายทาง" <?php echo isset($_POST['payment_info']) && $_POST['payment_info'] === 'เก็บเงินปลายทาง' ? 'checked' : ''; ?>>
                                 <label class="form-check-label" for="payment_cash">เก็บเงินปลายทาง</label>
                             </div>
                         </div>
                     </div>
+
                     <input type="hidden" name="total_price" value="<?php echo number_format($totalAmount, 2); ?>">
                     <input type="hidden" name="status_payment" value="รอการอนุมัติ">
                     <input type="hidden" name="status_noti" value="รอการแจ้งเตือน">
@@ -198,6 +201,16 @@ $conn->close();
                     <input type="submit" name="checkout" value="Checkout" class="btn btn-success">
                 </form>
 
+                <script>
+                    document.getElementById('checkout-form').addEventListener('submit', function (event) {
+                        const paymentInfo = document.querySelector('input[name="payment_info"]:checked');
+                        if (!paymentInfo) {
+                            alert('กรุณาเลือกวิธีการชำระเงิน');
+                            event.preventDefault(); // ป้องกันการส่งฟอร์มถ้ายังไม่ได้เลือก
+                        }
+                    });
+                </script>
+                
             <?php else: ?>
                 <p>ไม่มีสินค้าที่อยู่ในตะกร้า</p>
             <?php endif; ?>

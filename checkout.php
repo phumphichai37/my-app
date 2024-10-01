@@ -63,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 $user_id = $_SESSION['pharmacist'];
                 $status_payment = $_POST['status_payment'];
-                $total_price = (float)$_POST['total_price'];
+                $total_price = (float) $_POST['total_price'];
                 $payment_info = $_POST['payment_info'];
                 $status_noti = $_POST['status_noti'];
                 $t_id = $_POST['t_id'];
@@ -141,7 +141,7 @@ $conn->close();
                         foreach ($_SESSION['cart'] as $item):
                             $itemTotal = $item['price'] * $item['quantity'];
                             $totalAmount += $itemTotal;
-                        ?>
+                            ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($item['medicine_name']); ?></td>
                                 <td>฿<?php echo number_format($item['price'], 2); ?></td>
@@ -155,22 +155,20 @@ $conn->close();
                         </tr>
                     </tbody>
                 </table>
-                <form method="POST" action="">
+                <form method="POST" action="" onsubmit="return validatePaymentMethod()">
                     <div class="mb-3">
                         <label class="form-label">วิธีการชำระเงิน</label>
                         <div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="payment_info" id="payment_transfer" value="โอนเงิน"
-                                    <?php echo isset($_POST['payment_info']) && $_POST['payment_info'] === 'โอนเงิน' ? 'checked' : ''; ?>
-                                    onclick="toggleQRCode('show')">
+                                <input class="form-check-input" type="radio" name="payment_info" id="payment_transfer"
+                                    value="โอนเงิน" <?php echo isset($_POST['payment_info']) && $_POST['payment_info'] === 'โอนเงิน' ? 'checked' : ''; ?> onclick="toggleQRCode('show')">
                                 <label class="form-check-label" for="payment_transfer">
                                     โอนเงิน
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="payment_info" id="payment_cash" value="เงินสด"
-                                    <?php echo isset($_POST['payment_info']) && $_POST['payment_info'] === 'เงินสด' ? 'checked' : ''; ?>
-                                    onclick="toggleQRCode('hide')">
+                                <input class="form-check-input" type="radio" name="payment_info" id="payment_cash"
+                                    value="เงินสด" <?php echo isset($_POST['payment_info']) && $_POST['payment_info'] === 'เงินสด' ? 'checked' : ''; ?> onclick="toggleQRCode('hide')">
                                 <label class="form-check-label" for="payment_cash">
                                     เงินสด
                                 </label>
@@ -185,7 +183,8 @@ $conn->close();
                 </form>
 
                 <!-- PromptPay QR Code Container -->
-                <img id="qrcode" src="https://promptpay.io/0640219417/<?php echo $totalAmount ?>.png" style="display: none;">
+                <img id="qrcode" src="https://promptpay.io/0640219417/<?php echo $totalAmount ?>.png"
+                    style="display: none;">
 
                 <script>
                     function toggleQRCode(action) {
@@ -196,6 +195,20 @@ $conn->close();
                             qrcode.style.display = 'none';
                         }
                     }
+
+                    function validatePaymentMethod() {
+                        var paymentTransfer = document.getElementById('payment_transfer').checked;
+                        var paymentCash = document.getElementById('payment_cash').checked;
+
+                        if (!paymentTransfer && !paymentCash) {
+                            alert('กรุณาเลือกวิธีการชำระเงิน');
+                            return false; // หยุดการส่งฟอร์ม
+                        }
+                        return true; // ถ้าเลือกวิธีการชำระเงินแล้ว ให้ส่งฟอร์มต่อไป
+                    }
+
+
+
                 </script>
 
 

@@ -56,14 +56,14 @@ $revenueQuery = "SELECT SUM(total_price) AS monthly_total
                  FROM orders 
                  WHERE DATE_FORMAT(order_time, '%Y-%m') = ?";
 $revenueResult = getQueryResult($conn, $revenueQuery, [$selectedMonth], "s");
-$monthlyTotal = $revenueResult ? (float)$revenueResult->fetch_assoc()['monthly_total'] : 0.0;
+$monthlyTotal = $revenueResult ? (float) $revenueResult->fetch_assoc()['monthly_total'] : 0.0;
 
 // คำนวณรายปี
 $yearsQuery = "SELECT SUM(total_price) as year_total
                FROM orders
                WHERE DATE_FORMAT(order_time, '%Y') = ?";
 $yearsResult = getQueryResult($conn, $yearsQuery, [$selectedYear], "s");
-$yearstotal = $yearsResult ? (float)$yearsResult->fetch_assoc()['year_total'] : 0.0;
+$yearstotal = $yearsResult ? (float) $yearsResult->fetch_assoc()['year_total'] : 0.0;
 
 // คำนวณยอดรวมรายเดือนของแต่ละเดือน
 $monthlyQuery = "SELECT DATE_FORMAT(order_time, '%Y-%m') AS order_month, SUM(total_price) AS monthly_total 
@@ -180,14 +180,15 @@ $year = $date->format('Y');
 
         .box-container {
             display: flex;
-            justify-content: stretch;
+            justify-content: space-around;
             gap: 20px;
             margin-left: 30px;
             /* ระยะห่างระหว่างกล่อง */
         }
 
         .user-count-box,
-        .most-pills-box {
+        .most-pills-box,
+        .yearly-revenue-box {
             border: 2px solid #17a2b8;
             padding: 20px;
             background-color: #f8f9fa;
@@ -201,6 +202,11 @@ $year = $date->format('Y');
         }
 
         .most-pills-box {
+            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+
+        .yearly-revenue-box {
             margin-bottom: 20px;
             margin-top: 20px;
         }
@@ -284,6 +290,14 @@ $year = $date->format('Y');
                 </div>
                 <p>ยาที่ถูกซื้อบ่อยที่สุด: <?php echo $mostMedicineName; ?> จำนวน <?php echo $mostMedicineQuantity; ?> ชิ้น</p>
             </div>
+
+            <div class="yearly-revenue-box">
+                <div style="display: flex; justify-content: center;">
+                    <i class="fa-solid fa-money-bill-wave"
+                        style="color: #17a2b8; font-size: 56px; margin-bottom: 15px;"></i>
+                </div>
+                <p>รายได้รวมของปี <?php echo $selectedYear; ?>: <?php echo number_format($yearstotal, 2); ?> บาท</p>
+            </div>
         </div>
 
 
@@ -293,7 +307,9 @@ $year = $date->format('Y');
                     <h2>สถิติการสั่งซื้อรายวัน</h2>
                     <label for="monthSelector">เลือกเดือนรายวัน:</label>
                     <input type="month" id="monthSelector" class="form-control" value="<?php echo $selectedMonth; ?>">
-                    <p id="monthlyTotal">รายได้รวมของเดือน <?php echo $monthName . ' ' . $year; ?> : <?php echo number_format($monthlyTotal, 2); ?> บาท</p>
+                    <p id="monthlyTotal">รายได้รวมของเดือน <?php echo $monthName . ' ' . $year; ?> :
+                        <?php echo number_format($monthlyTotal, 2); ?> บาท
+                    </p>
                     <canvas id="dailyChart"></canvas>
                     <button onclick="downloadDailyCSV()">Daily</button>
                 </div>
@@ -303,8 +319,11 @@ $year = $date->format('Y');
                 <div class="chart-box">
                     <h2>สถิติรายได้รวมแต่ละเดือน</h2>
                     <label for="yearSelector">เลือกปี:</label>
-                    <input type="number" id="yearSelector" class="form-control" value="<?php echo $selectedYear; ?>" min="2000" max="<?php echo date('Y'); ?>">
-                    <p id="yearlyTotal">รายได้รวมของปี <?php echo $selectedYear; ?> : <?php echo number_format($yearstotal, 2); ?> บาท</p>
+                    <input type="number" id="yearSelector" class="form-control" value="<?php echo $selectedYear; ?>"
+                        min="2000" max="<?php echo date('Y'); ?>">
+                    <p id="yearlyTotal">รายได้รวมของปี <?php echo $selectedYear; ?> :
+                        <?php echo number_format($yearstotal, 2); ?> บาท
+                    </p>
                     <canvas id="monthlyChart"></canvas>
                     <button onclick="downloadMonthlyCSV()">Monthly</button>
                 </div>
@@ -347,7 +366,7 @@ $year = $date->format('Y');
                         $orderTime = DateTime::createFromFormat('Y-m-d H:i:s', $row['order_time'])->format('d M Y H:i');
                         $totalPrice = $row['total_price'];
                         $items = $row['items'];
-                    ?>
+                        ?>
                         <tr>
                             <td><?php echo $userId; ?></td>
                             <td><?php echo $userName; ?></td>
@@ -364,7 +383,7 @@ $year = $date->format('Y');
     </main>
 
     <script>
-        document.getElementById('monthSelector').addEventListener('change', function(event) {
+        document.getElementById('monthSelector').addEventListener('change', function (event) {
             let selectedMonth = this.value;
             let url = new URL(window.location.href);
             url.searchParams.set('month', selectedMonth);
@@ -372,7 +391,7 @@ $year = $date->format('Y');
             updateChart('daily', selectedMonth);
         });
 
-        document.getElementById('yearSelector').addEventListener('change', function(event) {
+        document.getElementById('yearSelector').addEventListener('change', function (event) {
             let selectedYear = this.value;
             let url = new URL(window.location.href);
             url.searchParams.set('year', selectedYear);
@@ -512,8 +531,8 @@ $year = $date->format('Y');
             var labels = monthlyChart.data.labels;
             var data = monthlyChart.data.datasets[0].data;
 
-            // สร้างข้อมูล CSV พร้อม BOM สำหรับการเข้ารหัส UTF-8
-            let csvContent = "\uFEFFเดือน,ยอดรวมรายเดือน\n"; // \uFEFF คือ BOM สำหรับ UTF-8
+            // สร้างข้อมูล CSV
+            let csvContent = "\uFEFFเดือน,ยอดรวมรายเดือน\n"; // \uFEFF สำหรับ UTF-8
             labels.forEach((label, index) => {
                 csvContent += label + "," + data[index] + "\uFEFFบาท\n";
             });
