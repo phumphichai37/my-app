@@ -148,18 +148,6 @@ $sql = "SELECT m.*, GROUP_CONCAT(mt.name_time SEPARATOR ', ') AS timings
         GROUP BY m.medicine_id";
 $result = $conn->query($sql);
 
-// ดึงข้อมูลรูปภาพของเภสัชกร
-$pharmacist_data = $_SESSION['pharmacist'];
-$pharmacist_id = $pharmacist_data['pharmacist_id'];
-
-$sql = "SELECT image FROM pharmacist WHERE pharmacist_id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $pharmacist_id);
-$stmt->execute();
-$result_image = $stmt->get_result();
-$pharmacist = $result_image->fetch_assoc();
-$image_path = $pharmacist['image'] ?? 'asset/default_user_icon.png';
-
 $conn->close();
 ?>
 
@@ -174,6 +162,7 @@ $conn->close();
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body {
             background: #f8f9fa;
@@ -427,8 +416,16 @@ $conn->close();
                                     <p>ไม่มีข้อมูล</p>
                                 <?php endif; ?>
                             </div>
-
-                            <button class="btn btn-warning mt-2 edit-button" data-id="<?php echo $row["medicine_id"]; ?>" data-name="<?php echo $row["medicine_name"]; ?>" data-description="<?php echo $row["description"]; ?>" data-type="<?php echo $row["type"]; ?>" data-price="<?php echo $row["price"]; ?>" data-stock="<?php echo $row["stock"]; ?>">แก้ไข</button>
+                            <button class="btn btn-warning mt-2 edit-button"
+                                data-id="<?php echo $row["medicine_id"]; ?>"
+                                data-name="<?php echo htmlspecialchars($row["medicine_name"]); ?>"
+                                data-description="<?php echo htmlspecialchars($row["description"]); ?>"
+                                data-type="<?php echo htmlspecialchars($row["type"]); ?>"
+                                data-price="<?php echo $row["price"]; ?>"
+                                data-stock="<?php echo $row["stock"]; ?>"
+                                data-timings="<?php echo htmlspecialchars($row["timings"]); ?>">
+                                แก้ไข
+                            </button>
                             <a href="medicine.php?delete=<?php echo $row['medicine_id']; ?>" class="btn btn-danger mt-2">ลบ</a>
                         </div>
                     </div>
@@ -437,7 +434,7 @@ $conn->close();
         </div>
     </div>
 
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form id="editMedicineForm">
@@ -467,6 +464,30 @@ $conn->close();
                             <label for="editItemStock" class="form-label">จำนวนสินค้า</label>
                             <input type="number" class="form-control" id="editItemStock" name="editItemStock" required>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">เวลาที่ใช้ยา</label><br>
+                            <div id="editTimings">
+                                <input type="checkbox" id="editBeforeBreakfast" name="editItemTiming[]" value="ก่อนอาหารเช้า">
+                                <label for="editBeforeBreakfast">ก่อนอาหารเช้า</label>
+                                <input type="checkbox" id="editAfterBreakfast" name="editItemTiming[]" value="หลังอาหารเช้า">
+                                <label for="editAfterBreakfast">หลังอาหารเช้า</label>
+                                <input type="checkbox" id="editBeforLaunch" name="editItemTiming[]" value="ก่อนอาหารกลางวัน">
+                                <label for="editBeforLaunch">ก่อนอาหารกลางวัน</label>
+                                <input type="checkbox" id="editAfterLaunch" name="editItemTiming[]" value="หลังอาหารกลางวัน">
+                                <label for="editAfterLaunch">หลังอาหารกลางวัน</label>
+                                <input type="checkbox" id="editBeforBreakfast" name="editItemTiming[]" value="ก่อนอาหารเย็น">
+                                <label for="editBeforBreakfast">ก่อนอาหารเย็น</label>
+                                <input type="checkbox" id="editAfterDinnerS" name="editItemTiming[]" value="หลังอาหารเย็น">
+                                <label for="editAfterDinner">หลังอาหารเย็น</label>
+                                <input type="checkbox" id="editBeforSleep" name="editItemTiming[]" value="ก่อนนอน">
+                                <label for="editBeforSleep">ก่อนนอน</label>
+                                <div>
+                                    <input type="checkbox" id="editOtherTiming" name="editItemTiming[]" value="other" onclick="toggleEditOtherTiming()">
+                                    <label for="editOtherTiming">อื่นๆ</label>
+                                    <input type="text" id="editOtherTimingInput" name="editOtherTimingInput" style="display:none;">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
@@ -475,79 +496,101 @@ $conn->close();
                 </form>
             </div>
         </div>
-    </div>
+        </div>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $(document).on('click', '.edit-button', function() {
-                var id = $(this).data('id');
-                var name = $(this).data('name');
-                var description = $(this).data('description');
-                var type = $(this).data('type');
-                var price = $(this).data('price');
-                var stock = $(this).data('stock');
 
-                $('#medicineId').val(id);
-                $('#editItemName').val(name);
-                $('#editItemDescription').val(description);
-                $('#editItemType').val(type);
-                $('#editItemPrice').val(price);
-                $('#editItemStock').val(stock);
 
-                $('#editModal').modal('show');
-            });
+        <script>
+            $(document).ready(function() {
+                $(document).on('click', '.edit-button', function() {
+                    console.log('Edit button clicked');
+                    var id = $(this).data('id');
+                    var name = $(this).data('name');
+                    var description = $(this).data('description');
+                    var type = $(this).data('type');
+                    var price = $(this).data('price');
+                    var stock = $(this).data('stock');
+                    var timings = $(this).data('timings').split(', ');
 
-            $('#editMedicineForm').on('submit', function(e) {
-                e.preventDefault();
+                    $('#medicineId').val(id);
+                    $('#editItemName').val(name);
+                    $('#editItemDescription').val(description);
+                    $('#editItemType').val(type);
+                    $('#editItemPrice').val(price);
+                    $('#editItemStock').val(stock);
 
-                $.ajax({
-                    url: 'update_medicine.php',
-                    type: 'POST',
-                    data: $(this).serialize(),
-                    success: function(response) {
-                        console.log(response); // ตรวจสอบผลลัพธ์
-                        alert('การแก้ไขสำเร็จ');
-                        location.reload(); // รีเฟรชหน้า
-                    },
-                    error: function(xhr, status, error) {
-                        console.log(xhr.responseText);
-                        alert('เกิดข้อผิดพลาด: ' + error);
-                    }
+                    // รีเซ็ตการเลือกเวลาใช้ยา
+                    $('input[name="editItemTiming[]"]').prop('checked', false);
+                    $('#editOtherTimingInput').val('').hide();
+
+                    // ตั้งค่าการเลือกเวลาใช้ยาตามข้อมูลที่มีอยู่
+                    timings.forEach(function(timing) {
+                        var checkbox = $('input[name="editItemTiming[]"][value="' + timing + '"]');
+                        if (checkbox.length) {
+                            checkbox.prop('checked', true);
+                        } else if (timing !== '') {
+                            $('#editOtherTiming').prop('checked', true);
+                            $('#editOtherTimingInput').val(timing).show();
+                        }
+                    });
+
+                    $('#editModal').modal('show');
                 });
 
+                $('#editMedicineForm').on('submit', function(e) {
+                    e.preventDefault();
+                    $.ajax({
+                        url: 'update_medicine.php',
+                        type: 'POST',
+                        data: $(this).serialize(),
+                        success: function(response) {
+                            console.log(response);
+                            alert('การแก้ไขสำเร็จ');
+                            location.reload();
+                        },
+                        error: function(xhr, status, error) {
+                            console.log(xhr.responseText);
+                            alert('เกิดข้อผิดพลาด: ' + error);
+                        }
+                    });
+                });
             });
-        });
 
-        function toggleOtherTiming() {
-            const otherInput = document.getElementById("otherTimingInput");
-            const otherCheckbox = document.getElementById("otherTiming");
-            if (otherCheckbox.checked) {
-                otherInput.style.display = "inline-block";
-            } else {
-                otherInput.style.display = "none";
-                otherInput.value = '';
+            function toggleEditOtherTiming() {
+                const otherInput = document.getElementById("editOtherTimingInput");
+                const otherCheckbox = document.getElementById("editOtherTiming");
+                otherInput.style.display = otherCheckbox.checked ? "inline-block" : "none";
+                if (!otherCheckbox.checked) {
+                    otherInput.value = '';
+                }
             }
-        }
 
-        function toggleDescription(button) {
-            const shortDescription = button.parentElement.querySelector('.short-description');
-            const fullDescription = button.parentElement.querySelector('.full-description');
-
-            if (fullDescription.style.display === 'none') {
-                fullDescription.style.display = 'inline';
-                shortDescription.style.display = 'none';
-                button.textContent = 'ย่อ';
-            } else {
-                fullDescription.style.display = 'none';
-                shortDescription.style.display = 'inline';
-                button.textContent = 'อ่านเพิ่มเติม';
+            function toggleOtherTiming() {
+                const otherInput = document.getElementById("otherTimingInput");
+                const otherCheckbox = document.getElementById("otherTiming");
+                if (otherCheckbox.checked) {
+                    otherInput.style.display = "inline-block";
+                } else {
+                    otherInput.style.display = "none";
+                    otherInput.value = '';
+                }
             }
-        }
-    </script>
+
+            function toggleDescription(button) {
+                const shortDescription = button.parentElement.querySelector('.short-description');
+                const fullDescription = button.parentElement.querySelector('.full-description');
+
+                if (fullDescription.style.display === 'none') {
+                    fullDescription.style.display = 'inline';
+                    shortDescription.style.display = 'none';
+                    button.textContent = 'ย่อ';
+                } else {
+                    fullDescription.style.display = 'none';
+                    shortDescription.style.display = 'inline';
+                    button.textContent = 'อ่านเพิ่มเติม';
+                }
+            }
+        </script>
 </body>
 
 </html>

@@ -7,10 +7,10 @@ if (isset($_SESSION["pharmacist"])) {
 }
 
 $images = [
-    'asset/band.png',
-    'asset/qrcode.jpg',
-    'asset/default_user_icon.png',
-    // เพิ่มรูปภาพตามต้องการ
+    'asset/dash.png',
+    'asset/cart.png',
+    'asset/picChat.png',
+    'asset/status.png',
 ];
 
 require_once "connectdb.php"; // เชื่อมต่อฐานข้อมูล
@@ -142,10 +142,10 @@ if (isset($_POST["login"])) {
         .image-slider {
             position: fixed;
             width: 40%;
-            height: 80vh;
+            height: 50vh;
             overflow: hidden;
             float: left;
-            margin-top: 3.5%;  
+            margin-top: 5%;
             margin-left: 10%;
             border: 3px solid transparent;
             background-image: linear-gradient(white, white),
@@ -162,6 +162,7 @@ if (isset($_POST["login"])) {
             height: 100%;
             opacity: 0;
             transition: opacity 0.5s ease-in-out;
+            background-color: #f8f9fa;
         }
 
         .slide.active {
@@ -171,8 +172,8 @@ if (isset($_POST["login"])) {
         .slide img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            object-position: center;
+            object-fit: contain;
+            object-position: center center;
         }
 
         .container {
